@@ -17,60 +17,60 @@ class AppColors {
 }
 
 class AppTextStyles {
-  static TextStyle get headingXL => GoogleFonts.oswald(
+  static TextStyle get headingXL => GoogleFonts.inter(
         color: AppColors.textPrimary,
-        fontSize: 30,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 2.0,
-      );
-
-  static TextStyle get headingLG => GoogleFonts.oswald(
-        color: AppColors.textPrimary,
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
+        fontSize: 28,
+        fontWeight: FontWeight.w900,
         letterSpacing: 1.5,
       );
 
-  static TextStyle get headingMD => GoogleFonts.oswald(
+  static TextStyle get headingLG => GoogleFonts.inter(
         color: AppColors.textPrimary,
+        fontSize: 22,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 1.2,
+      );
+
+  static TextStyle get headingMD => GoogleFonts.inter(
+        color: AppColors.textPrimary,
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+      );
+
+  static TextStyle get headingAccent => GoogleFonts.inter(
+        color: AppColors.accent,
         fontSize: 18,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.0,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 1.2,
       );
 
-  static TextStyle get headingAccent => GoogleFonts.oswald(
-        color: AppColors.accent,
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.5,
-      );
-
-  static TextStyle get bodyMD => GoogleFonts.oswald(
+  static TextStyle get bodyMD => GoogleFonts.inter(
         color: AppColors.textPrimary,
-        fontSize: 15,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.5,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.2,
       );
 
-  static TextStyle get bodySM => GoogleFonts.oswald(
+  static TextStyle get bodySM => GoogleFonts.inter(
         color: AppColors.textSecondary,
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: FontWeight.w400,
-        letterSpacing: 0.3,
+        letterSpacing: 0.1,
       );
 
-  static TextStyle get labelBold => GoogleFonts.oswald(
+  static TextStyle get labelBold => GoogleFonts.inter(
         color: AppColors.textPrimary,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.0,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.6,
       );
 
-  static TextStyle get accentBold => GoogleFonts.oswald(
+  static TextStyle get accentBold => GoogleFonts.inter(
         color: AppColors.accent,
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: FontWeight.w700,
-        letterSpacing: 1.0,
+        letterSpacing: 0.6,
       );
 }
 
@@ -83,8 +83,8 @@ class AppTheme {
           primary: AppColors.accent,
           surface: AppColors.cardBackground,
         ),
-        fontFamily: GoogleFonts.oswald().fontFamily,
-        textTheme: GoogleFonts.oswaldTextTheme(ThemeData.dark().textTheme),
+        fontFamily: GoogleFonts.inter().fontFamily,
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.background,
           elevation: 0,
