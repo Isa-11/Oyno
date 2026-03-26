@@ -32,6 +32,15 @@ class Venue {
     required this.sport,
     required this.address,
   });
+
+  factory Venue.fromJson(Map<String, dynamic> json) => Venue(
+        name: json['name'] as String,
+        imageUrl: json['image_url'] as String,
+        rating: (json['rating'] as num).toDouble(),
+        price: json['price'] as String,
+        sport: json['sport'] as String,
+        address: json['address'] as String,
+      );
 }
 
 class GameItem {
