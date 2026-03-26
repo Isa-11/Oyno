@@ -1,0 +1,41 @@
+[
+  {
+    "model": "venues.venue",
+    "pk": 1,
+    "fields": {
+      "name": "СПОРТКОМ АРЕНА",
+      "address": "ул. Московская 45",
+      "description": "Профессиональное футбольное поле с искусственным газоном.",
+      "sport": "football",
+      "price_per_hour": "800.00",
+      "image_url": "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800",
+      "rating": "4.8"
+    }
+  },
+  {
+    "model": "venues.venue",
+    "pk": 2,
+    "fields": {
+      "name": "БАСКЕТ ХОЛЛ",
+      "address": "пр. Манаса 12",
+      "description": "Крытый зал с паркетным покрытием и трибунами.",
+      "sport": "basketball",
+      "price_per_hour": "600.00",
+      "image_url": "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800",
+      "rating": "4.6"
+    }
+  },
+  {
+    "model": "venues.venue",
+    "pk": 3,
+    "fields": {
+      "name": "AQUA SPORT",
+      "address": "ул. Токтогула 89",
+      "description": "Олимпийский бассейн 50 м с разделительными дорожками.",
+      "sport": "swimming",
+      "price_per_hour": "1200.00",
+      "image_url": "https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?w=800",
+      "rating": "4.9"
+    }
+  }
+]

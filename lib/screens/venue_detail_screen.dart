@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../models/models.dart';
+import '../controllers/auth_controller.dart';
+import 'login_screen.dart';
 
 class VenueDetailScreen extends StatefulWidget {
   final Venue venue;
@@ -378,7 +380,12 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
             child: GestureDetector(
               onTap: _selectedSlot == null
                   ? null
-                  : () {
+                  : () async {
+                      final auth = Get.find<AuthController>();
+                      if (!auth.isLoggedIn.value) {
+                        final result = await Get.to(() => const LoginScreen());
+                        if (result != true) return;
+                      }
                       setState(() => _booked = true);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

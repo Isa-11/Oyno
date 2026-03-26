@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'theme/app_theme.dart';
 import 'controllers/nav_controller.dart';
+import 'controllers/venue_controller.dart';
+import 'controllers/auth_controller.dart';
+import 'services/venue_service.dart';
+import 'services/auth_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/games_screen.dart';
 import 'screens/chats_screen.dart';
@@ -16,6 +20,10 @@ void main() {
     systemNavigationBarColor: AppColors.cardBackground,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
+  Get.lazyPut<VenueService>(() => VenueService());
+  Get.lazyPut<VenueController>(() => VenueController());
+  Get.lazyPut<AuthService>(() => AuthService());
+  Get.lazyPut<AuthController>(() => AuthController());
   runApp(const OynoApp());
 }
 
