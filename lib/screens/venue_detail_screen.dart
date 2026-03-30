@@ -387,6 +387,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                         if (result != true) return;
                       }
                       setState(() => _booked = true);
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           backgroundColor: AppColors.confirmGreen,

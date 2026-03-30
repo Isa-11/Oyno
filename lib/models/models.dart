@@ -1,45 +1,81 @@
 class PlayerGroup {
+  final int? id;
   final String teamName;
   final String level;
   final int slotsNeeded;
   final String sport;
+  final String sportEmoji;
   final String time;
   final String location;
+  final bool isJoined;
+  final bool isCreator;
+  final int maxPlayers;
+  final int currentPlayers;
 
   PlayerGroup({
+    this.id,
     required this.teamName,
     required this.level,
     required this.slotsNeeded,
     required this.sport,
+    this.sportEmoji = '🏅',
     required this.time,
     required this.location,
+    this.isJoined = false,
+    this.isCreator = false,
+    this.maxPlayers = 10,
+    this.currentPlayers = 1,
   });
+
+  factory PlayerGroup.fromJson(Map<String, dynamic> json) => PlayerGroup(
+        id: json['id'] as int?,
+        teamName: json['creator_username'] as String? ?? '',
+        level: json['level'] as String? ?? '',
+        slotsNeeded: json['slots_needed'] as int? ?? 1,
+        sport: json['sport'] as String? ?? '',
+        sportEmoji: json['sport_emoji'] as String? ?? '🏅',
+        time: '${json['date'] ?? ''} • ${json['time'] ?? ''}',
+        location: json['venue_name'] as String? ?? '',
+        isJoined: json['is_joined'] as bool? ?? false,
+        isCreator: json['is_creator'] as bool? ?? false,
+        maxPlayers: json['max_players'] as int? ?? 10,
+        currentPlayers: json['current_players_count'] as int? ?? 1,
+      );
 }
 
 class Venue {
+  final int? id;
   final String name;
   final String imageUrl;
   final double rating;
   final String price;
   final String sport;
   final String address;
+  final String opensAt;
+  final String closesAt;
 
   Venue({
+    this.id,
     required this.name,
     required this.imageUrl,
     required this.rating,
     required this.price,
     required this.sport,
     required this.address,
+    this.opensAt = '07:00',
+    this.closesAt = '23:00',
   });
 
   factory Venue.fromJson(Map<String, dynamic> json) => Venue(
-        name: json['name'] as String,
-        imageUrl: json['image_url'] as String,
-        rating: (json['rating'] as num).toDouble(),
-        price: json['price'] as String,
-        sport: json['sport'] as String,
-        address: json['address'] as String,
+        id: json['id'] as int?,
+        name: json['name'] as String? ?? '',
+        imageUrl: json['image_url'] as String? ?? '',
+        rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+        price: json['price'] as String? ?? '',
+        sport: json['sport'] as String? ?? '',
+        address: json['address'] as String? ?? '',
+        opensAt: json['opens_at'] as String? ?? '07:00',
+        closesAt: json['closes_at'] as String? ?? '23:00',
       );
 }
 
@@ -61,24 +97,82 @@ class GameItem {
     required this.players,
     required this.status,
   });
+
+  factory GameItem.fromJson(Map<String, dynamic> json) => GameItem(
+        venueName: json['venue_name'] as String? ?? '',
+        sport: json['sport'] as String? ?? '',
+        sportEmoji: json['sport_emoji'] as String? ?? '🏅',
+        dateTime: json['date_time'] as String? ?? '',
+        location: json['location'] as String? ?? '',
+        players: json['players'] as String? ?? '0/0',
+        status: json['status'] as String? ?? '',
+      );
 }
 
 class ChatItem {
-  final String teamName;
+  final int id;
+  final String type; // 'game' | 'direct'
+  final String name;
   final String sportEmoji;
   final String lastMessage;
   final String time;
-  final bool isOnline;
   final int unread;
+  final int? gameId;
+  final int? otherUserId;
+  final String? otherUsername;
 
   ChatItem({
-    required this.teamName,
+    required this.id,
+    required this.type,
+    required this.name,
     required this.sportEmoji,
     required this.lastMessage,
     required this.time,
-    required this.isOnline,
     this.unread = 0,
+    this.gameId,
+    this.otherUserId,
+    this.otherUsername,
   });
+
+  bool get isOnline => false;
+  String get teamName => name;
+
+  factory ChatItem.fromJson(Map<String, dynamic> json) => ChatItem(
+        id: json['id'] as int? ?? 0,
+        type: json['type'] as String? ?? 'direct',
+        name: json['name'] as String? ?? '',
+        sportEmoji: json['sport_emoji'] as String? ?? '💬',
+        lastMessage: json['last_message'] as String? ?? '',
+        time: json['last_message_time'] as String? ?? '',
+        unread: json['unread_count'] as int? ?? 0,
+        gameId: json['game_id'] as int?,
+        otherUserId: json['other_user_id'] as int?,
+        otherUsername: json['other_username'] as String?,
+      );
+}
+
+class ChatMessage {
+  final int id;
+  final String senderUsername;
+  final bool isMine;
+  final String text;
+  final String time;
+
+  ChatMessage({
+    required this.id,
+    required this.senderUsername,
+    required this.isMine,
+    required this.text,
+    required this.time,
+  });
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+        id: json['id'] as int? ?? 0,
+        senderUsername: json['sender_username'] as String? ?? '',
+        isMine: json['is_mine'] as bool? ?? false,
+        text: json['text'] as String? ?? '',
+        time: json['time'] as String? ?? '',
+      );
 }
 
 // Mock data
@@ -190,41 +284,19 @@ class MockData {
 
   static List<ChatItem> chats = [
     ChatItem(
-      teamName: 'FC ALPHA',
-      sportEmoji: '⚽',
-      lastMessage: 'Все подтвердили на завтра?',
-      time: '20:45',
-      isOnline: true,
-      unread: 3,
+      id: 1, type: 'game', name: 'FC ALPHA',
+      sportEmoji: '⚽', lastMessage: 'Все подтвердили на завтра?',
+      time: '20:45', unread: 3,
     ),
     ChatItem(
-      teamName: 'BASKET KINGS',
-      sportEmoji: '🏀',
-      lastMessage: 'Зал свободен, берем!',
-      time: '19:12',
-      isOnline: true,
-      unread: 1,
+      id: 2, type: 'game', name: 'BASKET KINGS',
+      sportEmoji: '🏀', lastMessage: 'Зал свободен, берем!',
+      time: '19:12', unread: 1,
     ),
     ChatItem(
-      teamName: 'AQUA TEAM',
-      sportEmoji: '🏊',
-      lastMessage: 'Отличная тренировка сегодня!',
+      id: 3, type: 'direct', name: 'AQUA TEAM',
+      sportEmoji: '💬', lastMessage: 'Отличная тренировка сегодня!',
       time: '16:30',
-      isOnline: false,
-    ),
-    ChatItem(
-      teamName: 'ВОЛНА',
-      sportEmoji: '🏐',
-      lastMessage: 'Нужен ещё один игрок',
-      time: 'Вчера',
-      isOnline: false,
-    ),
-    ChatItem(
-      teamName: 'BISHKEK UNITED',
-      sportEmoji: '⚽',
-      lastMessage: 'Когда следующая игра?',
-      time: 'Вчера',
-      isOnline: true,
     ),
   ];
 }

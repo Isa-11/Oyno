@@ -5,12 +5,21 @@ import 'theme/app_theme.dart';
 import 'controllers/nav_controller.dart';
 import 'controllers/venue_controller.dart';
 import 'controllers/auth_controller.dart';
+import 'controllers/game_controller.dart';
+import 'controllers/player_group_controller.dart';
+import 'controllers/chat_controller.dart';
+import 'controllers/profile_controller.dart';
 import 'services/venue_service.dart';
 import 'services/auth_service.dart';
+import 'services/game_service.dart';
+import 'services/player_group_service.dart';
+import 'services/chat_service.dart';
+import 'services/profile_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/games_screen.dart';
 import 'screens/chats_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,10 +29,18 @@ void main() {
     systemNavigationBarColor: AppColors.cardBackground,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
+  Get.put<AuthService>(AuthService());
+  Get.put<AuthController>(AuthController());
   Get.lazyPut<VenueService>(() => VenueService());
   Get.lazyPut<VenueController>(() => VenueController());
-  Get.lazyPut<AuthService>(() => AuthService());
-  Get.lazyPut<AuthController>(() => AuthController());
+  Get.lazyPut<GameService>(() => GameService());
+  Get.lazyPut<GameController>(() => GameController());
+  Get.lazyPut<PlayerGroupService>(() => PlayerGroupService());
+  Get.lazyPut<PlayerGroupController>(() => PlayerGroupController());
+  Get.lazyPut<ChatService>(() => ChatService());
+  Get.lazyPut<ChatController>(() => ChatController());
+  Get.lazyPut<ProfileService>(() => ProfileService());
+  Get.lazyPut<ProfileController>(() => ProfileController());
   runApp(const OynoApp());
 }
 
@@ -36,8 +53,18 @@ class OynoApp extends StatelessWidget {
       title: 'Oyno Sports Community',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
-      home: const MainShell(),
+      home: const AuthGate(),
     );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = Get.find<AuthController>();
+    return Obx(() => auth.isLoggedIn.value ? const MainShell() : const LoginScreen());
   }
 }
 

@@ -22,6 +22,8 @@ INSTALLED_APPS = [
     'venues',
     'accounts',
     'bookings',
+    'games',
+    'chats',
 ]
 
 MIDDLEWARE = [

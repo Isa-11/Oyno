@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../controllers/auth_controller.dart';
 import 'api_response.dart';
 
 class BaseClient extends GetConnect {
@@ -11,11 +12,14 @@ class BaseClient extends GetConnect {
     httpClient.timeout = const Duration(seconds: 30);
 
     httpClient.addRequestModifier<dynamic>((request) {
-      // TODO: подключить AuthController, когда будет готов
-      // final token = Get.find<AuthController>().token.value;
-      // if (token.isNotEmpty) {
-      //   request.headers['Authorization'] = 'Bearer $token';
-      // }
+      try {
+        final ctrl = Get.find<AuthController>();
+        if (ctrl.token.value.isNotEmpty) {
+          request.headers['Authorization'] = 'Bearer ${ctrl.token.value}';
+        }
+      } catch (_) {
+        // AuthController ещё не зарегистрирован при первом запросе
+      }
       request.headers['Accept'] = 'application/json';
       request.headers['Content-Type'] = 'application/json';
       return request;
@@ -86,6 +90,27 @@ class BaseClient extends GetConnect {
       }
     }
     return fallback ?? 'Неизвестная ошибка';
+  }
+
+  Future<ApiResponse<T>> patchRequest<T>(
+    String endpoint,
+    Map<String, dynamic> body, {
+    T Function(dynamic json)? decoder,
+  }) async {
+    try {
+      final response = await patch(endpoint, body);
+      if (response.hasError) {
+        return ApiResponse.failure(
+          _extractError(response.body, response.statusText),
+          statusCode: response.statusCode,
+        );
+      }
+      return ApiResponse.success(
+        decoder != null ? decoder(response.body) : response.body,
+      );
+    } catch (e) {
+      return ApiResponse.failure(e.toString());
+    }
   }
 
   Future<ApiResponse<T>> putRequest<T>(

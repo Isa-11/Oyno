@@ -106,8 +106,14 @@ class GameCard extends StatelessWidget {
                   const SizedBox(width: 10),
                   GestureDetector(
                     onTap: () => Get.to(() => ChatDetailScreen(
-                          teamName: game.venueName,
-                          sportEmoji: game.sportEmoji,
+                          chat: ChatItem(
+                            id: 0,
+                            type: 'game',
+                            name: game.venueName,
+                            sportEmoji: game.sportEmoji,
+                            lastMessage: '',
+                            time: '',
+                          ),
                         )),
                     child: Container(
                       width: 44,

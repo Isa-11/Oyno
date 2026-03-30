@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../controllers/player_group_controller.dart';
+import '../screens/chat_detail_screen.dart';
 import '../theme/app_theme.dart';
 import '../models/models.dart';
-import '../screens/join_team_screen.dart';
 
 class PlayerCard extends StatelessWidget {
   final PlayerGroup group;
@@ -56,6 +57,10 @@ class PlayerCard extends StatelessWidget {
             children: [
               _neededChip(group.slotsNeeded),
               const Spacer(),
+              if ((group.isJoined || group.isCreator) && group.id != null) ...[
+                _chatButton(),
+                const SizedBox(width: 8),
+              ],
               _joinButton(context),
             ],
           ),
@@ -97,19 +102,83 @@ class PlayerCard extends StatelessWidget {
     );
   }
 
-  Widget _joinButton(BuildContext context) {
+  Widget _chatButton() {
     return GestureDetector(
-      onTap: () => Get.to(() => JoinTeamScreen(group: group)),
+      onTap: () {
+        final chatItem = ChatItem(
+          id: group.id!,
+          type: 'game',
+          name: group.teamName,
+          sportEmoji: group.sportEmoji,
+          lastMessage: '',
+          time: '',
+          gameId: group.id,
+        );
+        Get.to(() => ChatDetailScreen(chat: chatItem));
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: const Icon(Icons.chat_bubble_outline,
+            color: AppColors.accent, size: 18),
+      ),
+    );
+  }
+
+  Widget _joinButton(BuildContext context) {
+    if (group.isCreator) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Text('МОЯ ИГРА', style: AppTextStyles.bodySM.copyWith(color: AppColors.textSecondary)),
+      );
+    }
+    if (group.isJoined) {
+      return GestureDetector(
+        onTap: () async {
+          if (group.id == null) { return; }
+          final ok = await Get.find<PlayerGroupController>().leaveGame(group.id!);
+          if (!ok) {
+            Get.snackbar('Ошибка', 'Не удалось покинуть игру',
+                backgroundColor: AppColors.dangerRed, colorText: AppColors.textPrimary,
+                snackPosition: SnackPosition.TOP);
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.dangerRed),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text('ВЫЙТИ', style: AppTextStyles.labelBold.copyWith(color: AppColors.dangerRed)),
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: () async {
+        if (group.id == null) { return; }
+        final ok = await Get.find<PlayerGroupController>().joinGame(group.id!);
+        if (!ok) {
+          Get.snackbar('Ошибка', 'Не удалось вступить в игру',
+              backgroundColor: AppColors.dangerRed, colorText: AppColors.textPrimary,
+              snackPosition: SnackPosition.TOP);
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: AppColors.accent,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(
-          'ВОРВАТЬСЯ',
-          style: AppTextStyles.labelBold.copyWith(color: AppColors.background),
-        ),
+        child: Text('ВОРВАТЬСЯ', style: AppTextStyles.labelBold.copyWith(color: AppColors.background)),
       ),
     );
   }

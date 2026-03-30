@@ -275,8 +275,14 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
         const SizedBox(width: 12),
         GestureDetector(
           onTap: () => Get.to(() => ChatDetailScreen(
-                teamName: widget.game.venueName,
-                sportEmoji: widget.game.sportEmoji,
+                chat: ChatItem(
+                  id: 0,
+                  type: 'game',
+                  name: widget.game.venueName,
+                  sportEmoji: widget.game.sportEmoji,
+                  lastMessage: '',
+                  time: '',
+                ),
               )),
           child: Container(
             width: 52,

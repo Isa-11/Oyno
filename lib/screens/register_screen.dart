@@ -43,11 +43,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final error =
         await Get.find<AuthController>().register(username, email, password);
 
-    _isLoading.value = false;
-
     if (error == null) {
-      Get.back(result: true);
+      // Возвращаемся к корневому маршруту (AuthGate) — он уже покажет MainShell
+      Get.until((route) => route.isFirst);
     } else {
+      _isLoading.value = false;
       _errorMsg.value = error;
     }
   }

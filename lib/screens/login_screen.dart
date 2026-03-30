@@ -39,11 +39,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final error = await Get.find<AuthController>().login(username, password);
 
-    _isLoading.value = false;
-
     if (error == null) {
-      Get.back(result: true);
+      // AuthGate автоматически переключится на MainShell через Obx
     } else {
+      _isLoading.value = false;
       _errorMsg.value = error;
     }
   }

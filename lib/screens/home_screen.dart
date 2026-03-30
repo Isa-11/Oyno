@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../controllers/venue_controller.dart';
-import '../models/models.dart';
+import '../controllers/player_group_controller.dart';
 import '../widgets/sport_filter_chips.dart';
 import '../widgets/player_card.dart';
 import '../widgets/venue_card.dart';
@@ -188,14 +188,21 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildPlayersList() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: MockData.playerGroups
-            .map((g) => PlayerCard(group: g))
-            .toList(),
-      ),
-    );
+    final controller = Get.find<PlayerGroupController>();
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
+        );
+      }
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: controller.groups.map((g) => PlayerCard(group: g)).toList(),
+        ),
+      );
+    });
   }
 
   Widget _buildVenuesList() {

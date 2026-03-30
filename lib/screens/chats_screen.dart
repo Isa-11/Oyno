@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controllers/chat_controller.dart';
 import '../theme/app_theme.dart';
-import '../models/models.dart';
 import '../widgets/chat_list_item.dart';
 
 class ChatsScreen extends StatelessWidget {
@@ -18,18 +19,22 @@ class ChatsScreen extends StatelessWidget {
             _buildSearchBar(),
             const SizedBox(height: 8),
             Expanded(
-              child: ListView.separated(
-                itemCount: MockData.chats.length,
-                separatorBuilder: (_, __) => const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: Divider(
-                    color: AppColors.divider,
-                    height: 1,
-                    thickness: 1,
+              child: Obx(() {
+                final ctrl = Get.find<ChatController>();
+                if (ctrl.isLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.accent),
+                  );
+                }
+                return ListView.separated(
+                  itemCount: ctrl.chats.length,
+                  separatorBuilder: (_, __) => const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Divider(color: AppColors.divider, height: 1, thickness: 1),
                   ),
-                ),
-                itemBuilder: (_, i) => ChatListItem(chat: MockData.chats[i]),
-              ),
+                  itemBuilder: (_, i) => ChatListItem(chat: ctrl.chats[i]),
+                );
+              }),
             ),
           ],
         ),

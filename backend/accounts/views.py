@@ -1,5 +1,7 @@
 from django.contrib.auth import authenticate
+from django.utils import timezone
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -38,4 +40,49 @@ class LoginView(APIView):
             'user': {'id': user.id, 'username': user.username, 'email': user.email},
             'access': str(refresh.access_token),
             'refresh': str(refresh),
+        })
+
+
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        today = timezone.now().date()
+
+        from games.models import Game, GameParticipant
+        joined_ids = GameParticipant.objects.filter(user=user).values_list('game_id', flat=True)
+        created_ids = Game.objects.filter(creator=user).values_list('id', flat=True)
+        all_ids = set(list(joined_ids) + list(created_ids))
+
+        games_total = Game.objects.filter(id__in=all_ids, date__lt=today).count()
+        upcoming = Game.objects.filter(id__in=all_ids, date__gte=today).count()
+
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email or '',
+            'games_total': games_total,
+            'upcoming_games': upcoming,
+        })
+
+    def patch(self, request):
+        user = request.user
+        username = request.data.get('username', '').strip()
+        email = request.data.get('email', '').strip()
+
+        if username and username != user.username:
+            from django.contrib.auth.models import User
+            if User.objects.filter(username=username).exclude(pk=user.pk).exists():
+                return Response({'detail': 'Имя уже занято'}, status=400)
+            user.username = username
+
+        if email:
+            user.email = email
+
+        user.save()
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email or '',
         })

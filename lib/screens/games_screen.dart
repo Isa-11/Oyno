@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
-import '../models/models.dart';
+import '../controllers/game_controller.dart';
+import '../models/models.dart' show GameItem;
 import '../widgets/game_card.dart';
 import 'create_game_screen.dart';
 
@@ -41,13 +42,21 @@ class _GamesScreenState extends State<GamesScreen>
             _buildTabBar(),
             const SizedBox(height: 4),
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildGamesList(MockData.upcomingGames),
-                  _buildGamesList(MockData.historyGames),
-                ],
-              ),
+              child: Obx(() {
+                final ctrl = Get.find<GameController>();
+                if (ctrl.isLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.accent),
+                  );
+                }
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildGamesList(ctrl.upcoming),
+                    _buildGamesList(ctrl.history),
+                  ],
+                );
+              }),
             ),
           ],
         ),

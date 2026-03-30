@@ -12,10 +12,7 @@ class ChatListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Get.to(() => ChatDetailScreen(
-            teamName: chat.teamName,
-            sportEmoji: chat.sportEmoji,
-          )),
+      onTap: () => Get.to(() => ChatDetailScreen(chat: chat)),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         color: Colors.transparent,

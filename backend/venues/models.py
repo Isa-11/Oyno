@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Venue(models.Model):
@@ -11,13 +12,19 @@ class Venue(models.Model):
         ('other', 'Другое'),
     ]
 
+    owner = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='owned_venues'
+    )
     name = models.CharField(max_length=200)
     address = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     sport = models.CharField(max_length=50, choices=SPORT_CHOICES)
     price_per_hour = models.DecimalField(max_digits=8, decimal_places=2)
-    image_url = models.URLField(max_length=500)
+    # Несколько фото через запятую (URL)
+    image_url = models.URLField(max_length=500, blank=True)
     rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0)
+    opens_at = models.TimeField(default='07:00')   # начало работы
+    closes_at = models.TimeField(default='23:00')  # конец работы
 
     class Meta:
         ordering = ['-rating']
