@@ -50,4 +50,35 @@ class AuthService extends BaseClient {
         {'username': username, 'password': password},
         decoder: (json) => AuthResult.fromJson(json),
       );
+
+  Future<ApiResponse<void>> sendOtp({
+    required String phone,
+    required String purpose, // 'register' | 'reset'
+  }) =>
+      postRequest<void>(
+        'auth/send-otp/',
+        {'phone': phone, 'purpose': purpose},
+      );
+
+  Future<ApiResponse<AuthResult>> registerPhone({
+    required String phone,
+    required String code,
+    required String username,
+    required String password,
+  }) =>
+      postRequest<AuthResult>(
+        'auth/register-phone/',
+        {'phone': phone, 'code': code, 'username': username, 'password': password},
+        decoder: (json) => AuthResult.fromJson(json),
+      );
+
+  Future<ApiResponse<void>> resetPassword({
+    required String phone,
+    required String code,
+    required String newPassword,
+  }) =>
+      postRequest<void>(
+        'auth/reset-password/',
+        {'phone': phone, 'code': code, 'new_password': newPassword},
+      );
 }

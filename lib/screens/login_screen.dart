@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../controllers/auth_controller.dart';
 import 'register_screen.dart';
+import 'phone_register_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,10 +41,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final error = await Get.find<AuthController>().login(username, password);
 
-    if (error == null) {
-      // AuthGate автоматически переключится на MainShell через Obx
-    } else {
-      _isLoading.value = false;
+    _isLoading.value = false;
+    if (error != null) {
       _errorMsg.value = error;
     }
   }
@@ -153,6 +153,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             .copyWith(color: AppColors.accent)),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: GestureDetector(
+                  onTap: () => Get.to(() => const PhoneRegisterScreen()),
+                  child: Text('Регистрация по номеру телефона',
+                      style: AppTextStyles.bodySM
+                          .copyWith(color: AppColors.accent)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: GestureDetector(
+                  onTap: () => Get.to(() => const ForgotPasswordScreen()),
+                  child: Text('Забыли пароль?',
+                      style: AppTextStyles.bodySM
+                          .copyWith(color: AppColors.textSecondary)),
+                ),
               ),
             ],
           ),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'dart:convert';
+import '../controllers/auth_controller.dart';
 import '../models/models.dart';
 import '../services/chat_service.dart';
 import '../theme/app_theme.dart';
@@ -22,10 +25,41 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final RxBool _loading = true.obs;
   final RxBool _sending = false.obs;
 
+  WebSocketChannel? _channel;
+
   @override
   void initState() {
     super.initState();
     _loadMessages();
+    _connectWebSocket();
+  }
+
+  void _connectWebSocket() {
+    final token = Get.find<AuthController>().token.value;
+    final chat = widget.chat;
+    final chatType = chat.type;
+    final chatId = chatType == 'game' ? chat.gameId : chat.otherUserId;
+    if (chatId == null) return;
+
+    final wsUrl = Uri.parse(
+      'ws://127.0.0.1:8000/ws/chat/$chatType/$chatId/?token=$token',
+    );
+    _channel = WebSocketChannel.connect(wsUrl);
+    _channel!.stream.listen(
+      (data) {
+        final msg = jsonDecode(data as String);
+        _messages.add(ChatMessage(
+          id: msg['id'] as int,
+          senderUsername: msg['sender_username'] as String,
+          isMine: msg['is_mine'] as bool,
+          text: msg['text'] as String,
+          time: msg['time'] as String,
+        ));
+        _scrollToBottom();
+      },
+      onError: (_) {},
+      onDone: () {},
+    );
   }
 
   Future<void> _loadMessages() async {
@@ -46,27 +80,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     _scrollToBottom();
   }
 
-  Future<void> _send() async {
+  void _send() {
     final text = _input.text.trim();
     if (text.isEmpty || _sending.value) return;
     _input.clear();
-    _sending.value = true;
 
-    final chat = widget.chat;
-    ChatMessage? msg;
-    if (chat.type == 'game' && chat.gameId != null) {
-      final res = await _service.sendGameMessage(chat.gameId!, text);
-      msg = res.data;
-    } else if (chat.type == 'direct' && chat.otherUserId != null) {
-      final res = await _service.sendDirectMessage(chat.otherUserId!, text);
-      msg = res.data;
+    if (_channel != null) {
+      _channel!.sink.add(jsonEncode({'text': text}));
     }
-
-    if (msg != null) {
-      _messages.add(msg);
-      _scrollToBottom();
-    }
-    _sending.value = false;
   }
 
   void _scrollToBottom() {
@@ -83,6 +104,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   void dispose() {
+    _channel?.sink.close();
     _input.dispose();
     _scroll.dispose();
     super.dispose();
@@ -289,29 +311,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          Obx(() => GestureDetector(
-                onTap: _sending.value ? null : _send,
-                child: Container(
-                  width: 48, height: 48,
-                  decoration: BoxDecoration(
-                    color: _sending.value
-                        ? AppColors.surface
-                        : AppColors.accent,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: _sending.value
-                      ? const Center(
-                          child: SizedBox(
-                            width: 20, height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.accent),
-                          ),
-                        )
-                      : const Icon(Icons.send_rounded,
-                          color: AppColors.background, size: 22),
-                ),
-              )),
+          GestureDetector(
+            onTap: _send,
+            child: Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.send_rounded,
+                  color: AppColors.background, size: 22),
+            ),
+          ),
         ],
       ),
     );

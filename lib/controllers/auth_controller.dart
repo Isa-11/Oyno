@@ -61,6 +61,9 @@ class AuthController extends GetxController {
     await prefs.setString('username', result.user.username);
   }
 
+  /// Используется при регистрации через телефон
+  Future<void> loginWithResult(AuthResult result) => _saveSession(result);
+
   Future<void> logout() async {
     token.value = '';
     username.value = '';
