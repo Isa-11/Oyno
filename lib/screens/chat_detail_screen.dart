@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
+import '../config/app_config.dart';
 import '../controllers/auth_controller.dart';
 import '../models/models.dart';
 import '../services/chat_service.dart';
@@ -42,7 +43,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     if (chatId == null) return;
 
     final wsUrl = Uri.parse(
-      'ws://127.0.0.1:8000/ws/chat/$chatType/$chatId/?token=$token',
+      '${AppConfig.wsBaseUrl}chat/$chatType/$chatId/?token=$token',
     );
     _channel = WebSocketChannel.connect(wsUrl);
     _channel!.stream.listen(
