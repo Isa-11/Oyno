@@ -2,6 +2,15 @@ from rest_framework import serializers
 from .models import Game, GameParticipant
 
 
+class ParticipantSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+
+    class Meta:
+        model = GameParticipant
+        fields = ['user_id', 'username', 'joined_at']
+
+
 class GameSerializer(serializers.ModelSerializer):
     sport_emoji = serializers.ReadOnlyField()
     current_players_count = serializers.ReadOnlyField()
@@ -35,8 +44,16 @@ class GameSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['creator'] = self.context['request'].user
         game = super().create(validated_data)
-        # Автоматически обновляем статус если мест нет
         if game.slots_needed == 0:
             game.status = 'full'
             game.save()
         return game
+
+
+class GameDetailSerializer(GameSerializer):
+    """Расширенный сериализатор для GET /api/games/{id}/ — включает список участников"""
+    participants_list = ParticipantSerializer(source='participants', many=True, read_only=True)
+    creator_id = serializers.IntegerField(source='creator.id', read_only=True)
+
+    class Meta(GameSerializer.Meta):
+        fields = GameSerializer.Meta.fields + ['creator_id', 'participants_list']

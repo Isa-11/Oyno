@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Game, GameParticipant
-from .serializers import GameSerializer
+from .serializers import GameSerializer, GameDetailSerializer
 
 
 class GameListCreateView(generics.ListCreateAPIView):
@@ -46,6 +46,26 @@ class MyGamesHistoryView(generics.ListAPIView):
         joined_ids = GameParticipant.objects.filter(user=user).values_list('game_id', flat=True)
         joined = Game.objects.filter(id__in=joined_ids, date__lt=today)
         return (created | joined).distinct().select_related('creator').prefetch_related('participants')
+
+
+class GameDetailView(generics.RetrieveAPIView):
+    """GET /api/games/{id}/ — детали одной игры с участниками"""
+    serializer_class = GameDetailSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    queryset = Game.objects.select_related('creator').prefetch_related('participants__user')
+
+
+class GroupListView(generics.ListAPIView):
+    """GET /api/groups/?sport= — открытые игры в формате PlayerGroup для главного экрана"""
+    serializer_class = GameSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        qs = Game.objects.filter(status='open').select_related('creator').prefetch_related('participants')
+        sport = self.request.query_params.get('sport')
+        if sport:
+            qs = qs.filter(sport=sport)
+        return qs
 
 
 class GameJoinView(APIView):

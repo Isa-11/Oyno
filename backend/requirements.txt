@@ -1,7 +1,23 @@
-django>=4.2
+django>=4.2,<5.0
 djangorestframework>=3.14
 django-cors-headers>=4.3
 djangorestframework-simplejwt>=5.3
 channels>=4.0
 daphne>=4.0
 
+# Database
+psycopg2-binary>=2.9.9
+
+# Redis (channel layers + cache)
+channels-redis>=4.1.0
+redis>=5.0.0
+
+# Config via environment variables
+python-decouple>=3.8
+
+# Static files
+whitenoise>=6.6.0
+
+# Production WSGI/ASGI
+gunicorn>=21.2.0
+uvicorn>=0.27.0

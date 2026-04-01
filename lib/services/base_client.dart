@@ -1,14 +1,14 @@
 import 'package:get/get.dart';
+import '../config/app_config.dart';
 import '../controllers/auth_controller.dart';
 import 'api_response.dart';
 
 class BaseClient extends GetConnect {
-  // TODO: вынести в конфиг/env
-  static const String apiBaseUrl = 'http://172.20.10.3:8000/api/';
+  static String get apiBaseUrl => AppConfig.apiBaseUrl;
 
   @override
   void onInit() {
-    httpClient.baseUrl = apiBaseUrl;
+    httpClient.baseUrl = AppConfig.apiBaseUrl;
     httpClient.timeout = const Duration(seconds: 30);
 
     httpClient.addRequestModifier<dynamic>((request) {
