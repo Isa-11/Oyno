@@ -3,7 +3,8 @@
     "allow": [
       "Bash(flutter --version)",
       "Bash(flutter analyze:*)",
-      "Bash(flutter run:*)"
+      "Bash(flutter run:*)",
+      "Bash(ipconfig)"
     ]
   }
 }

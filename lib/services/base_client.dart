@@ -4,7 +4,7 @@ import 'api_response.dart';
 
 class BaseClient extends GetConnect {
   // TODO: вынести в конфиг/env
-  static const String apiBaseUrl = 'http://10.0.2.2:8000/api/';
+  static const String apiBaseUrl = 'http://172.20.10.3:8000/api/';
 
   @override
   void onInit() {

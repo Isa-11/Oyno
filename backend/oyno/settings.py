@@ -24,7 +24,21 @@ INSTALLED_APPS = [
     'bookings',
     'games',
     'chats',
+    'channels',
 ]
+
+ASGI_APPLICATION = 'oyno.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+# SMS через Twilio — заполни свои данные из https://console.twilio.com/
+TWILIO_ACCOUNT_SID = ''   # например 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+TWILIO_AUTH_TOKEN = ''    # например 'your_auth_token'
+TWILIO_FROM_NUMBER = ''   # например '+15017122661'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

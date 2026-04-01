@@ -16,6 +16,7 @@ dependencies:
   flutter_svg: ^2.0.9
   google_fonts: ^6.2.1
   shared_preferences: ^2.3.0
+  web_socket_channel: ^3.0.1
 
 dev_dependencies:
   flutter_test:
