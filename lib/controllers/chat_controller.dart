@@ -7,6 +7,7 @@ class ChatController extends GetxController {
 
   final RxList<ChatItem> chats = <ChatItem>[].obs;
   final RxBool isLoading = false.obs;
+  final RxString error = ''.obs;
 
   @override
   void onInit() {
@@ -16,11 +17,12 @@ class ChatController extends GetxController {
 
   Future<void> fetchChats() async {
     isLoading.value = true;
+    error.value = '';
     final res = await _service.getChats();
     if (res.isSuccess && res.data != null) {
       chats.assignAll(res.data!);
     } else {
-      if (chats.isEmpty) chats.assignAll(MockData.chats);
+      error.value = res.error ?? 'Не удалось загрузить чаты';
     }
     isLoading.value = false;
   }

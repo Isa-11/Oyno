@@ -7,6 +7,7 @@ class PlayerGroupController extends GetxController {
 
   final RxList<PlayerGroup> groups = <PlayerGroup>[].obs;
   final RxBool isLoading = false.obs;
+  final RxString error = ''.obs;
 
   @override
   void onInit() {
@@ -16,11 +17,12 @@ class PlayerGroupController extends GetxController {
 
   Future<void> fetchGroups({String? sport}) async {
     isLoading.value = true;
+    error.value = '';
     final res = await _service.getOpenGames(sport: sport);
     if (res.isSuccess && res.data != null) {
       groups.assignAll(res.data!);
     } else {
-      if (groups.isEmpty) groups.assignAll(MockData.playerGroups);
+      error.value = res.error ?? 'Не удалось загрузить игроков';
     }
     isLoading.value = false;
   }

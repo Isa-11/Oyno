@@ -24,14 +24,12 @@ class GameController extends GetxController {
     if (upRes.isSuccess && upRes.data != null) {
       upcoming.assignAll(upRes.data!);
     } else {
-      if (upcoming.isEmpty) upcoming.assignAll(MockData.upcomingGames);
+      error.value = upRes.error ?? 'Не удалось загрузить игры';
     }
 
     final hiRes = await _gameService.getHistoryGames();
     if (hiRes.isSuccess && hiRes.data != null) {
       history.assignAll(hiRes.data!);
-    } else {
-      if (history.isEmpty) history.assignAll(MockData.historyGames);
     }
 
     isLoading.value = false;

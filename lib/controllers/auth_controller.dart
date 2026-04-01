@@ -33,7 +33,7 @@ class AuthController extends GetxController {
     );
     if (response.isSuccess && response.data != null) {
       await _saveSession(response.data!);
-      return null; // нет ошибки
+      return null;
     }
     return response.error ?? 'Ошибка входа';
   }
@@ -58,10 +58,10 @@ class AuthController extends GetxController {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', result.access);
+    await prefs.setString('refresh_token', result.refresh);
     await prefs.setString('username', result.user.username);
   }
 
-  /// Используется при регистрации через телефон
   Future<void> loginWithResult(AuthResult result) => _saveSession(result);
 
   Future<void> logout() async {
@@ -71,6 +71,7 @@ class AuthController extends GetxController {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
+    await prefs.remove('refresh_token');
     await prefs.remove('username');
   }
 }

@@ -1,12 +1,14 @@
 from django.contrib import admin
 from django.urls import path, include
 from games.views import GroupListView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Auth & Profile
     path('api/auth/', include('accounts.urls')),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
 
     # Venues + slots
     path('api/', include('venues.urls')),

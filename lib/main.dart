@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -17,20 +18,28 @@ import 'services/player_group_service.dart';
 import 'services/chat_service.dart';
 import 'services/profile_service.dart';
 import 'services/settings_service.dart';
+import 'services/fcm_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/games_screen.dart';
 import 'screens/chats_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
     systemNavigationBarColor: AppColors.cardBackground,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
+
+  // Firebase — нужен google-services.json (Android) / GoogleService-Info.plist (iOS)
+  // Если файлы ещё не добавлены — закомментируй эти две строки:
+  await Firebase.initializeApp();
+  await FcmService().init();
+
   Get.put<AuthService>(AuthService());
   Get.put<AuthController>(AuthController());
   Get.lazyPut<VenueService>(() => VenueService());
@@ -46,6 +55,7 @@ void main() {
   Get.put<NavController>(NavController());
   Get.lazyPut<SettingsService>(() => SettingsService());
   Get.lazyPut<SettingsController>(() => SettingsController());
+  Get.put<FcmService>(FcmService());
   runApp(const OynoApp());
 }
 
@@ -59,6 +69,11 @@ class OynoApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       home: const AuthGate(),
+      // Deep link routes — используются в FcmService._handleNotificationTap
+      getPages: [
+        GetPage(name: '/game/:id', page: () => const GamesScreen()),
+        GetPage(name: '/bookings', page: () => const ProfileScreen()),
+      ],
     );
   }
 }
@@ -134,7 +149,6 @@ class MainShell extends StatelessWidget {
                     activeIcon: Icons.chat_bubble,
                     label: 'Чаты',
                     onTap: () => nav.changePage(2),
-                    badge: 4,
                   ),
                   _navItem(
                     index: 3,

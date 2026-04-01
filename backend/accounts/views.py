@@ -72,6 +72,7 @@ class ProfileView(APIView):
         user = request.user
         username = request.data.get('username', '').strip()
         email = request.data.get('email', '').strip()
+        fcm_token = request.data.get('fcm_token', '').strip()
 
         if username and username != user.username:
             from django.contrib.auth.models import User
@@ -83,6 +84,12 @@ class ProfileView(APIView):
             user.email = email
 
         user.save()
+
+        if fcm_token:
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            profile.fcm_token = fcm_token
+            profile.save(update_fields=['fcm_token'])
+
         return Response({
             'id': user.id,
             'username': user.username,

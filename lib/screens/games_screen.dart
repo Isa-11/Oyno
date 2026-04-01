@@ -4,6 +4,9 @@ import '../theme/app_theme.dart';
 import '../controllers/game_controller.dart';
 import '../models/models.dart' show GameItem;
 import '../widgets/game_card.dart';
+import '../widgets/shimmer_loader.dart';
+import '../widgets/error_state.dart';
+import '../widgets/empty_state.dart';
 import 'create_game_screen.dart';
 
 class GamesScreen extends StatefulWidget {
@@ -45,8 +48,12 @@ class _GamesScreenState extends State<GamesScreen>
               child: Obx(() {
                 final ctrl = Get.find<GameController>();
                 if (ctrl.isLoading.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppColors.accent),
+                  return const ShimmerLoader(itemCount: 4, itemHeight: 90);
+                }
+                if (ctrl.error.value.isNotEmpty) {
+                  return ErrorState(
+                    message: ctrl.error.value,
+                    onRetry: ctrl.fetchAll,
                   );
                 }
                 return TabBarView(
@@ -141,18 +148,12 @@ class _GamesScreenState extends State<GamesScreen>
 
   Widget _buildGamesList(List<GameItem> games) {
     if (games.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('🏟️', style: TextStyle(fontSize: 48)),
-            const SizedBox(height: 12),
-            Text(
-              'Нет игр',
-              style: AppTextStyles.bodyMD.copyWith(color: AppColors.textSecondary),
-            ),
-          ],
-        ),
+      return EmptyState(
+        icon: Icons.sports_soccer_outlined,
+        message: 'Нет игр',
+        subtitle: 'Создайте игру или вступите в существующую',
+        actionLabel: 'СОЗДАТЬ ИГРУ',
+        onAction: () => Get.to(() => const CreateGameScreen()),
       );
     }
     return ListView.builder(

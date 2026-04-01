@@ -6,6 +6,9 @@ import '../controllers/player_group_controller.dart';
 import '../widgets/sport_filter_chips.dart';
 import '../widgets/player_card.dart';
 import '../widgets/venue_card.dart';
+import '../widgets/shimmer_loader.dart';
+import '../widgets/error_state.dart';
+import '../widgets/empty_state.dart';
 import 'notification_screen.dart';
 import 'create_game_screen.dart';
 
@@ -191,9 +194,25 @@ class HomeScreen extends StatelessWidget {
     final controller = Get.find<PlayerGroupController>();
     return Obx(() {
       if (controller.isLoading.value) {
+        return const ShimmerLoader(itemCount: 3, itemHeight: 100);
+      }
+      if (controller.error.value.isNotEmpty) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: ErrorState(
+            message: controller.error.value,
+            onRetry: controller.fetchGroups,
+          ),
+        );
+      }
+      if (controller.groups.isEmpty) {
         return const Padding(
-          padding: EdgeInsets.symmetric(vertical: 24),
-          child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: EmptyState(
+            icon: Icons.group_outlined,
+            message: 'Нет открытых игр',
+            subtitle: 'Создайте свою игру или проверьте позже',
+          ),
         );
       }
       return Padding(
@@ -209,10 +228,14 @@ class HomeScreen extends StatelessWidget {
     final controller = Get.find<VenueController>();
     return Obx(() {
       if (controller.isLoading.value) {
+        return const ShimmerLoader(itemCount: 2, itemHeight: 120);
+      }
+      if (controller.venues.isEmpty) {
         return const Padding(
-          padding: EdgeInsets.symmetric(vertical: 32),
-          child: Center(
-            child: CircularProgressIndicator(color: AppColors.accent),
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: EmptyState(
+            icon: Icons.sports_outlined,
+            message: 'Площадки не найдены',
           ),
         );
       }

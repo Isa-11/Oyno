@@ -25,8 +25,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final RxList<ChatMessage> _messages = <ChatMessage>[].obs;
   final RxBool _loading = true.obs;
   final RxBool _sending = false.obs;
+  final RxBool _connected = true.obs;
 
   WebSocketChannel? _channel;
+  bool _disposed = false;
+  int _reconnectDelay = 1; // seconds, doubles on each attempt
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   void _connectWebSocket() {
+    if (_disposed) return;
     final token = Get.find<AuthController>().token.value;
     final chat = widget.chat;
     final chatType = chat.type;
@@ -45,22 +49,40 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final wsUrl = Uri.parse(
       '${AppConfig.wsBaseUrl}chat/$chatType/$chatId/?token=$token',
     );
-    _channel = WebSocketChannel.connect(wsUrl);
-    _channel!.stream.listen(
-      (data) {
-        final msg = jsonDecode(data as String);
-        _messages.add(ChatMessage(
-          id: msg['id'] as int,
-          senderUsername: msg['sender_username'] as String,
-          isMine: msg['is_mine'] as bool,
-          text: msg['text'] as String,
-          time: msg['time'] as String,
-        ));
-        _scrollToBottom();
-      },
-      onError: (_) {},
-      onDone: () {},
-    );
+
+    try {
+      _channel = WebSocketChannel.connect(wsUrl);
+      _connected.value = true;
+      _reconnectDelay = 1;
+
+      _channel!.stream.listen(
+        (data) {
+          final msg = jsonDecode(data as String);
+          _messages.add(ChatMessage(
+            id: msg['id'] as int,
+            senderUsername: msg['sender_username'] as String,
+            isMine: msg['is_mine'] as bool,
+            text: msg['text'] as String,
+            time: msg['time'] as String,
+          ));
+          _scrollToBottom();
+        },
+        onError: (_) => _scheduleReconnect(),
+        onDone: () => _scheduleReconnect(),
+      );
+    } catch (_) {
+      _scheduleReconnect();
+    }
+  }
+
+  void _scheduleReconnect() {
+    if (_disposed) return;
+    _connected.value = false;
+    final delay = _reconnectDelay;
+    _reconnectDelay = (_reconnectDelay * 2).clamp(1, 30);
+    Future.delayed(Duration(seconds: delay), () {
+      if (!_disposed) _connectWebSocket();
+    });
   }
 
   Future<void> _loadMessages() async {
@@ -105,6 +127,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   void dispose() {
+    _disposed = true;
     _channel?.sink.close();
     _input.dispose();
     _scroll.dispose();
@@ -191,11 +214,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               children: [
                 Text(chat.name, style: AppTextStyles.labelBold,
                     maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(
-                  chat.type == 'game' ? 'ГРУППОВОЙ ЧАТ' : 'ЛИЧНЫЙ ЧАТ',
-                  style: AppTextStyles.bodySM
-                      .copyWith(fontSize: 11, color: AppColors.accent),
-                ),
+                Obx(() => Text(
+                  _connected.value
+                      ? (chat.type == 'game' ? 'ГРУППОВОЙ ЧАТ' : 'ЛИЧНЫЙ ЧАТ')
+                      : 'ПЕРЕПОДКЛЮЧЕНИЕ...',
+                  style: AppTextStyles.bodySM.copyWith(
+                    fontSize: 11,
+                    color: _connected.value ? AppColors.accent : AppColors.textSecondary,
+                  ),
+                )),
               ],
             ),
           ),
