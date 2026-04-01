@@ -35,7 +35,7 @@ class PlayerGroup {
         sport: json['sport'] as String? ?? '',
         sportEmoji: json['sport_emoji'] as String? ?? '🏅',
         time: '${json['date'] ?? ''} • ${json['time'] ?? ''}',
-        location: json['venue_name'] as String? ?? '',
+      location: json['location'] as String? ?? json['venue_name'] as String? ?? '',
         isJoined: json['is_joined'] as bool? ?? false,
         isCreator: json['is_creator'] as bool? ?? false,
         maxPlayers: json['max_players'] as int? ?? 10,
@@ -102,10 +102,10 @@ class GameItem {
         venueName: json['venue_name'] as String? ?? '',
         sport: json['sport'] as String? ?? '',
         sportEmoji: json['sport_emoji'] as String? ?? '🏅',
-        dateTime: json['date_time'] as String? ?? '',
+      dateTime: '${json['date'] ?? ''} ${json['time'] ?? ''}'.trim(),
         location: json['location'] as String? ?? '',
-        players: json['players'] as String? ?? '0/0',
-        status: json['status'] as String? ?? '',
+      players: '${json['current_players_count'] ?? 0}/${json['max_players'] ?? 0}',
+      status: (json['status'] as String? ?? '').toUpperCase(),
       );
 }
 
@@ -150,6 +150,18 @@ class ChatItem {
         otherUsername: json['other_username'] as String?,
       );
 }
+
+    class ChatUserSearch {
+      final int id;
+      final String username;
+
+      ChatUserSearch({required this.id, required this.username});
+
+      factory ChatUserSearch.fromJson(Map<String, dynamic> json) => ChatUserSearch(
+        id: json['id'] as int? ?? 0,
+        username: json['username'] as String? ?? '',
+      );
+    }
 
 class ChatMessage {
   final int id;

@@ -86,6 +86,9 @@ class _PhoneRegisterScreenState extends State<PhoneRegisterScreen> {
     _isLoading.value = false;
     if (res.isSuccess && res.data != null) {
       await Get.find<AuthController>().loginWithResult(res.data!);
+      if (mounted && Navigator.of(context).canPop()) {
+        Get.back(result: true);
+      }
     } else {
       _errorMsg.value = res.error ?? 'Ошибка регистрации';
       if (res.error?.contains('код') == true) _step.value = 2;

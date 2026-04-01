@@ -44,6 +44,11 @@ class _LoginScreenState extends State<LoginScreen> {
     _isLoading.value = false;
     if (error != null) {
       _errorMsg.value = error;
+    } else {
+      // If login was opened as a sub-route (e.g. from booking), return success.
+      if (Navigator.of(context).canPop()) {
+        Get.back(result: true);
+      }
     }
   }
 
@@ -88,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 40),
               _field(
                 controller: _usernameCtrl,
-                hint: 'Имя пользователя',
+                hint: 'Имя пользователя / телефон / email',
                 icon: Icons.person_outline,
               ),
               const SizedBox(height: 16),
@@ -147,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text('Нет аккаунта?', style: AppTextStyles.bodySM),
                   const SizedBox(width: 6),
                   GestureDetector(
-                    onTap: () => Get.off(() => const RegisterScreen()),
+                    onTap: () => Get.to(() => const RegisterScreen()),
                     child: Text('Зарегистрироваться',
                         style: AppTextStyles.bodySM
                             .copyWith(color: AppColors.accent)),
@@ -157,7 +162,12 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 12),
               Center(
                 child: GestureDetector(
-                  onTap: () => Get.to(() => const PhoneRegisterScreen()),
+                  onTap: () async {
+                    final result = await Get.to(() => const PhoneRegisterScreen());
+                    if (result == true && mounted && Navigator.of(context).canPop()) {
+                      Get.back(result: true);
+                    }
+                  },
                   child: Text('Регистрация по номеру телефона',
                       style: AppTextStyles.bodySM
                           .copyWith(color: AppColors.accent)),

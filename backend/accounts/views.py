@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -11,6 +11,7 @@ from .sms import send_sms
 
 
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if not serializer.is_valid():
@@ -26,14 +27,39 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
+    permission_classes = [AllowAny]
 
-        user = authenticate(username=username, password=password)
+    def post(self, request):
+        login = (request.data.get('username') or request.data.get('login') or '').strip()
+        password = request.data.get('password') or ''
+
+        if not login or not password:
+            return Response(
+                {'detail': 'Введите логин и пароль'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Support auth by username, phone number, or email.
+        candidates = [login]
+        if '@' in login:
+            from django.contrib.auth.models import User
+            found = User.objects.filter(email__iexact=login).values_list('username', flat=True).first()
+            if found:
+                candidates.append(found)
+        else:
+            profile = UserProfile.objects.select_related('user').filter(phone=login).first()
+            if profile:
+                candidates.append(profile.user.username)
+
+        user = None
+        for username in dict.fromkeys(candidates):
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                break
+
         if user is None:
             return Response(
-                {'detail': 'Неверное имя пользователя или пароль'},
+                {'detail': 'Неверный логин или пароль'},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -51,6 +77,7 @@ class ProfileView(APIView):
     def get(self, request):
         user = request.user
         today = timezone.now().date()
+        profile, _ = UserProfile.objects.get_or_create(user=user)
 
         from games.models import Game, GameParticipant
         joined_ids = GameParticipant.objects.filter(user=user).values_list('game_id', flat=True)
@@ -64,6 +91,9 @@ class ProfileView(APIView):
             'id': user.id,
             'username': user.username,
             'email': user.email or '',
+            'city': profile.city or '',
+            'avatar_data': profile.avatar_data or '',
+            'rating': float(profile.rating or 0.0),
             'games_total': games_total,
             'upcoming_games': upcoming,
         })
@@ -73,6 +103,8 @@ class ProfileView(APIView):
         username = request.data.get('username', '').strip()
         email = request.data.get('email', '').strip()
         fcm_token = request.data.get('fcm_token', '').strip()
+        city = request.data.get('city', '').strip()
+        avatar_data = request.data.get('avatar_data', '').strip()
 
         if username and username != user.username:
             from django.contrib.auth.models import User
@@ -85,15 +117,24 @@ class ProfileView(APIView):
 
         user.save()
 
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+
         if fcm_token:
-            profile, _ = UserProfile.objects.get_or_create(user=user)
             profile.fcm_token = fcm_token
-            profile.save(update_fields=['fcm_token'])
+        if 'city' in request.data:
+            profile.city = city
+        if 'avatar_data' in request.data:
+            profile.avatar_data = avatar_data
+        if fcm_token or 'city' in request.data or 'avatar_data' in request.data:
+            profile.save()
 
         return Response({
             'id': user.id,
             'username': user.username,
             'email': user.email or '',
+            'city': profile.city or '',
+            'avatar_data': profile.avatar_data or '',
+            'rating': float(profile.rating or 0.0),
         })
 
 
@@ -102,6 +143,7 @@ class SendOtpView(APIView):
     POST /api/auth/send-otp/
     {"phone": "+996700123456", "purpose": "register"|"reset"}
     """
+    permission_classes = [AllowAny]
     def post(self, request):
         phone = request.data.get('phone', '').strip()
         purpose = request.data.get('purpose', '')
@@ -132,6 +174,7 @@ class SendOtpView(APIView):
 
 
 class RegisterPhoneView(APIView):
+    permission_classes = [AllowAny]
     """
     POST /api/auth/register-phone/
     {"phone": "+996700123456", "code": "123456", "username": "...", "password": "..."}
@@ -178,6 +221,7 @@ class RegisterPhoneView(APIView):
 
 
 class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
     """
     POST /api/auth/reset-password/
     {"phone": "+996700123456", "code": "123456", "new_password": "..."}

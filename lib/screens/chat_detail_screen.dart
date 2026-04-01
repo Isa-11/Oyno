@@ -40,15 +40,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   void _connectWebSocket() {
     if (_disposed) return;
-    final token = Get.find<AuthController>().token.value;
+    final token = Get.find<AuthController>().token.value.trim().replaceAll('#', '');
     final chat = widget.chat;
     final chatType = chat.type;
     final chatId = chatType == 'game' ? chat.gameId : chat.otherUserId;
     if (chatId == null) return;
 
-    final wsUrl = Uri.parse(
-      '${AppConfig.wsBaseUrl}chat/$chatType/$chatId/?token=$token',
-    );
+    final wsUrl = Uri.parse('${AppConfig.wsBaseUrl}chat/$chatType/$chatId/')
+        .replace(queryParameters: {'token': token});
 
     try {
       _channel = WebSocketChannel.connect(wsUrl);

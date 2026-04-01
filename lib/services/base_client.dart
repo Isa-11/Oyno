@@ -1,8 +1,11 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../controllers/auth_controller.dart';
 import 'api_response.dart';
+import 'auth_storage.dart';
 
 class BaseClient extends GetConnect {
   static String get apiBaseUrl => AppConfig.apiBaseUrl;
@@ -33,7 +36,7 @@ class BaseClient extends GetConnect {
     T Function(dynamic json)? decoder,
   }) =>
       _withRefresh(() async {
-        final r = await get(endpoint, query: query, decoder: decoder);
+        final r = await get(endpoint, query: query);
         return _fromResponse<T>(r, decoder);
       });
 
@@ -63,7 +66,7 @@ class BaseClient extends GetConnect {
     T Function(dynamic json)? decoder,
   }) =>
       _withRefresh(() async {
-        final r = await put(endpoint, body, decoder: decoder);
+        final r = await put(endpoint, body);
         return _fromResponse<T>(r, decoder);
       });
 
@@ -72,7 +75,7 @@ class BaseClient extends GetConnect {
     T Function(dynamic json)? decoder,
   }) =>
       _withRefresh(() async {
-        final r = await delete(endpoint, decoder: decoder);
+        final r = await delete(endpoint);
         return _fromResponse<T>(r, decoder);
       });
 
@@ -109,14 +112,18 @@ class BaseClient extends GetConnect {
       }
       return result;
     } catch (e) {
+      if (e is SocketException) {
+        return ApiResponse.failure(
+          'Нет подключения к серверу (${AppConfig.apiBaseUrl}). Проверьте runserver и adb reverse tcp:8000 tcp:8000.',
+        );
+      }
       return ApiResponse.failure(e.toString());
     }
   }
 
   Future<bool> _tryRefreshToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final refreshToken = prefs.getString('refresh_token') ?? '';
+      final refreshToken = await AuthStorage.readRefreshToken();
       if (refreshToken.isEmpty) return false;
 
       final response = await post(
@@ -127,7 +134,12 @@ class BaseClient extends GetConnect {
         final newAccess = response.body['access'] as String?;
         if (newAccess == null || newAccess.isEmpty) return false;
 
-        await prefs.setString('access_token', newAccess);
+        final username = await AuthStorage.readUsername();
+        await AuthStorage.writeSession(
+          access: newAccess,
+          refresh: refreshToken,
+          username: username,
+        );
         try {
           Get.find<AuthController>().token.value = newAccess;
         } catch (_) {}

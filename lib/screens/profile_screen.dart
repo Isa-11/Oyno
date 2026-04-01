@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/nav_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../theme/app_theme.dart';
+import 'games_history_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -81,10 +84,15 @@ class ProfileScreen extends StatelessWidget {
                 child: Center(
                   child: Obx(() {
                     final name = _ctrl.username.value;
-                    return Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: AppTextStyles.headingXL.copyWith(fontSize: 40),
-                    );
+                    final avatar = _ctrl.avatarData.value;
+                    if (avatar.isNotEmpty && avatar.contains(',')) {
+                      final raw = avatar.split(',').last;
+                      try {
+                        return Image.memory(base64Decode(raw), fit: BoxFit.cover);
+                      } catch (_) {}
+                    }
+                    return Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                        style: AppTextStyles.headingXL.copyWith(fontSize: 40));
                   }),
                 ),
               ),
@@ -98,9 +106,7 @@ class ProfileScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.background, width: 2),
                 ),
-                child: const Center(
-                  child: Text('⚡', style: TextStyle(fontSize: 14)),
-                ),
+                child: const Icon(Icons.photo_camera, size: 14, color: AppColors.background),
               ),
             ),
           ],
@@ -120,7 +126,10 @@ class ProfileScreen extends StatelessWidget {
           children: [
             const Icon(Icons.location_on, color: AppColors.textSecondary, size: 14),
             const SizedBox(width: 4),
-            Text('БИШКЕК, КР', style: AppTextStyles.bodySM),
+            Obx(() => Text(
+                  _ctrl.city.value.isNotEmpty ? _ctrl.city.value : 'Бишкек',
+                  style: AppTextStyles.bodySM,
+                )),
           ],
         ),
         const SizedBox(height: 14),
@@ -130,7 +139,10 @@ class ProfileScreen extends StatelessWidget {
             border: Border.all(color: AppColors.accent, width: 1.5),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text('ИГРОК СООБЩЕСТВА', style: AppTextStyles.accentBold),
+          child: Obx(() => Text(
+                'РЕЙТИНГ ${_ctrl.rating.value.toStringAsFixed(1)}',
+                style: AppTextStyles.accentBold,
+              )),
         ),
       ],
     );
@@ -148,23 +160,26 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Obx(() => _statItem(
                 _ctrl.gamesTotal.value.toString(),
-                'МАТЧИ', '🏆')),
+                'МАТЧИ', Icons.sports_soccer)),
           _verticalDivider(),
           Obx(() => _statItem(
                 _ctrl.upcomingGames.value.toString(),
-                'БЛИЖАЙШИЕ', '📅')),
+                'БЛИЖАЙШИЕ', Icons.event)),
           _verticalDivider(),
-          _statItem('⚡', 'АКТИВЕН', '🎯'),
+          Obx(() => _statItem(
+                _ctrl.rating.value.toStringAsFixed(1),
+                'РЕЙТИНГ', Icons.star_half,
+              )),
         ],
       ),
     );
   }
 
-  Widget _statItem(String value, String label, String emoji) {
+  Widget _statItem(String value, String label, IconData icon) {
     return Expanded(
       child: Column(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 18)),
+          Icon(icon, color: AppColors.textSecondary, size: 18),
           const SizedBox(height: 6),
           Text(value,
               style: AppTextStyles.headingLG.copyWith(color: AppColors.accent)),
@@ -189,13 +204,14 @@ class ProfileScreen extends StatelessWidget {
         _menuItem(
           icon: Icons.history,
           label: 'ИСТОРИЯ ИГР',
-          onTap: () => _showSimpleSheet(context, 'ИСТОРИЯ ИГР', '🏆',
-              'Откройте вкладку "Игры" чтобы увидеть историю матчей.'),
+          onTap: () => Get.to(() => const GamesHistoryScreen()),
         ),
         _menuItem(
           icon: Icons.chat_bubble_outline,
           label: 'МОИ ЧАТЫ',
-          onTap: () => Get.find<NavController>().changePage(2),
+          onTap: () {
+            Get.find<NavController>().changePage(2);
+          },
         ),
         _menuItem(
           icon: Icons.settings_outlined,
@@ -212,8 +228,11 @@ class ProfileScreen extends StatelessWidget {
         TextEditingController(text: Get.find<ProfileController>().username.value);
     final emailCtrl =
         TextEditingController(text: Get.find<ProfileController>().email.value);
+    final cityCtrl =
+      TextEditingController(text: Get.find<ProfileController>().city.value);
     final saving = false.obs;
     final error = ''.obs;
+    final avatarData = ''.obs;
 
     showModalBottomSheet(
       context: context,
@@ -248,6 +267,38 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _inputField('EMAIL', emailCtrl,
                 hint: 'Введите email...', keyboardType: TextInputType.emailAddress),
+            const SizedBox(height: 12),
+            _inputField('ГОРОД', cityCtrl,
+                hint: 'Введите город...'),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () async {
+                final picker = ImagePicker();
+                final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+                if (file == null) return;
+                final bytes = await file.readAsBytes();
+                avatarData.value = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.photo_library_outlined, color: AppColors.textSecondary, size: 18),
+                    const SizedBox(width: 10),
+                    Obx(() => Text(
+                          avatarData.value.isNotEmpty ? 'Фото выбрано' : 'Загрузить фото',
+                          style: AppTextStyles.bodySM,
+                        )),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 8),
             Obx(() => error.value.isNotEmpty
                 ? Padding(
@@ -265,8 +316,12 @@ class ProfileScreen extends StatelessWidget {
                           saving.value = true;
                           error.value = '';
                           final err = await Get.find<ProfileController>()
-                              .saveProfile(nameCtrl.text.trim(),
-                                  emailCtrl.text.trim());
+                              .saveProfile(
+                                nameCtrl.text.trim(),
+                                emailCtrl.text.trim(),
+                                cityCtrl.text.trim(),
+                                newAvatarData: avatarData.value.isNotEmpty ? avatarData.value : null,
+                              );
                           if (err == null) {
                             Get.back();
                           } else {
@@ -337,62 +392,13 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showSimpleSheet(
-      BuildContext context, String title, String emoji, String body) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.cardBackground,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(emoji, style: const TextStyle(fontSize: 48)),
-            const SizedBox(height: 16),
-            Text(title, style: AppTextStyles.headingMD),
-            const SizedBox(height: 12),
-            Text(body,
-                style: AppTextStyles.bodySM, textAlign: TextAlign.center),
-            const SizedBox(height: 28),
-            GestureDetector(
-              onTap: () => Get.back(),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.divider),
-                ),
-                child: Center(
-                  child: Text('ЗАКРЫТЬ', style: AppTextStyles.labelBold),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showSettingsSheet(BuildContext context) {
     final s = Get.find<SettingsController>();
     final items = [
-      ('🔔', 'Уведомления', 'notifications', s.notifications),
-      ('🌙', 'Тёмная тема', 'dark_theme', s.darkTheme),
-      ('📍', 'Геолокация', 'geolocation', s.geolocation),
-      ('🔒', 'Приватность', 'privacy', s.privacy),
+      (Icons.notifications_outlined, 'Уведомления', 'notifications', s.notifications),
+      (Icons.dark_mode_outlined, 'Тёмная тема', 'dark_theme', s.darkTheme),
+      (Icons.my_location_outlined, 'Геолокация', 'geolocation', s.geolocation),
+      (Icons.lock_outline, 'Приватность', 'privacy', s.privacy),
     ];
 
     showModalBottomSheet(
@@ -428,7 +434,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Text(item.$1, style: const TextStyle(fontSize: 20)),
+                      Icon(item.$1, color: AppColors.textSecondary, size: 20),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(item.$2, style: AppTextStyles.labelBold),

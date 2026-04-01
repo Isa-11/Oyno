@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../services/auth_storage.dart';
 
 class AuthController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
@@ -9,6 +9,8 @@ class AuthController extends GetxController {
   final RxString username = ''.obs;
   final RxString token = ''.obs;
 
+  int _sessionRevision = 0;
+
   @override
   void onInit() {
     super.onInit();
@@ -16,9 +18,13 @@ class AuthController extends GetxController {
   }
 
   Future<void> _loadFromStorage() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedToken = prefs.getString('access_token') ?? '';
-    final savedUsername = prefs.getString('username') ?? '';
+    final rev = _sessionRevision;
+    final savedToken = await AuthStorage.readAccessToken();
+    final savedUsername = await AuthStorage.readUsername();
+
+    // Ignore stale load result if auth state changed while reading storage.
+    if (rev != _sessionRevision) return;
+
     if (savedToken.isNotEmpty) {
       token.value = savedToken;
       username.value = savedUsername;
@@ -27,6 +33,9 @@ class AuthController extends GetxController {
   }
 
   Future<String?> login(String usernameInput, String password) async {
+    // Always start a fresh auth attempt to prevent stale account state.
+    await _clearSession();
+
     final response = await _authService.login(
       username: usernameInput,
       password: password,
@@ -52,26 +61,28 @@ class AuthController extends GetxController {
   }
 
   Future<void> _saveSession(AuthResult result) async {
+    _sessionRevision++;
     token.value = result.access;
     username.value = result.user.username;
     isLoggedIn.value = true;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', result.access);
-    await prefs.setString('refresh_token', result.refresh);
-    await prefs.setString('username', result.user.username);
+    await AuthStorage.writeSession(
+      access: result.access,
+      refresh: result.refresh,
+      username: result.user.username,
+    );
   }
 
   Future<void> loginWithResult(AuthResult result) => _saveSession(result);
 
   Future<void> logout() async {
+    await _clearSession();
+  }
+
+  Future<void> _clearSession() async {
+    _sessionRevision++;
     token.value = '';
     username.value = '';
     isLoggedIn.value = false;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
-    await prefs.remove('refresh_token');
-    await prefs.remove('username');
+    await AuthStorage.clearSession();
   }
 }

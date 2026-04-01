@@ -14,7 +14,7 @@ class AppConfig {
   // ── Dev (локальная сеть) ───────────────────────────────────────────────────
   // Замени на IP своего ПК: Settings → Wi-Fi → свойства сети
   // Android-эмулятор: используй 10.0.2.2 вместо 127.0.0.1
-  static const String _devHost = '192.168.51.254'; // твой IP в локальной сети
+  static const String _devHost = '127.0.0.1'; // IP компьютера в локальной сети
   static const String _devApiBase = 'http://$_devHost:8000/api/';
   static const String _devWsBase  = 'ws://$_devHost:8000/ws/';
 
@@ -24,5 +24,10 @@ class AppConfig {
 
   // ── Публичные геттеры ──────────────────────────────────────────────────────
   static String get apiBaseUrl => _isProd ? _prodApiBase : _devApiBase;
-  static String get wsBaseUrl  => _isProd ? _prodWsBase  : _devWsBase;
+  static String get wsBaseUrl {
+    final raw = _isProd ? _prodWsBase : _devWsBase;
+    if (raw.startsWith('http://')) return 'ws://${raw.substring('http://'.length)}';
+    if (raw.startsWith('https://')) return 'wss://${raw.substring('https://'.length)}';
+    return raw;
+  }
 }

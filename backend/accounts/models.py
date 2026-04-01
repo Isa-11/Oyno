@@ -9,6 +9,9 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
     fcm_token = models.CharField(max_length=500, blank=True, default='')
+    city = models.CharField(max_length=80, blank=True, default='')
+    avatar_data = models.TextField(blank=True, default='')
+    rating = models.FloatField(default=0.0)
 
     def __str__(self):
         return f'{self.user.username} — {self.phone}'

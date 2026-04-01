@@ -7,14 +7,15 @@ import '../models/models.dart';
 
 class PlayerCard extends StatelessWidget {
   final PlayerGroup group;
+  final bool compact;
 
-  const PlayerCard({super.key, required this.group});
+  const PlayerCard({super.key, required this.group, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.all(compact ? 12 : 16),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
@@ -25,16 +26,18 @@ class PlayerCard extends StatelessWidget {
         children: [
           Row(
             children: [
+              Icon(_sportIcon(group.sport), color: AppColors.accent, size: compact ? 16 : 18),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   group.teamName,
-                  style: AppTextStyles.headingMD,
+                  style: compact ? AppTextStyles.labelBold : AppTextStyles.headingMD,
                 ),
               ),
               _levelBadge(group.level),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: compact ? 8 : 10),
           Row(
             children: [
               const Icon(Icons.access_time, color: AppColors.textSecondary, size: 14),
@@ -52,7 +55,7 @@ class PlayerCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: compact ? 10 : 14),
           Row(
             children: [
               _neededChip(group.slotsNeeded),
@@ -81,7 +84,8 @@ class PlayerCard extends StatelessWidget {
         level,
         style: AppTextStyles.bodySM.copyWith(
           color: AppColors.textSecondary,
-          fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w700,
+            fontSize: compact ? 11 : 12,
         ),
       ),
     );
@@ -97,9 +101,22 @@ class PlayerCard extends StatelessWidget {
       ),
       child: Text(
         'НУЖНО: $slots',
-        style: AppTextStyles.accentBold.copyWith(fontSize: 12),
+        style: AppTextStyles.accentBold.copyWith(fontSize: compact ? 11 : 12),
       ),
     );
+  }
+
+  IconData _sportIcon(String sport) {
+    switch (sport) {
+      case 'football':
+        return Icons.sports_soccer;
+      case 'basketball':
+        return Icons.sports_basketball;
+      case 'tennis':
+        return Icons.sports_tennis;
+      default:
+        return Icons.sports;
+    }
   }
 
   Widget _chatButton() {

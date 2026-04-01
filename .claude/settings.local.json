@@ -4,7 +4,13 @@
       "Bash(flutter --version)",
       "Bash(flutter analyze:*)",
       "Bash(flutter run:*)",
-      "Bash(ipconfig)"
+      "Bash(ipconfig)",
+      "Bash(findstr /i \"IPv4\")",
+      "Bash(python manage.py migrate --noinput)",
+      "Bash(python manage.py makemigrations --merge --no-input)",
+      "Bash(python manage.py runserver 0.0.0.0:8000)",
+      "Bash(flutter pub:*)",
+      "Bash(flutter clean:*)"
     ]
   }
 }

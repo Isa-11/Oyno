@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../controllers/venue_controller.dart';
-import '../controllers/player_group_controller.dart';
-import '../widgets/sport_filter_chips.dart';
-import '../widgets/player_card.dart';
 import '../widgets/venue_card.dart';
 import '../widgets/shimmer_loader.dart';
-import '../widgets/error_state.dart';
 import '../widgets/empty_state.dart';
 import 'notification_screen.dart';
 import 'create_game_screen.dart';
@@ -23,19 +19,8 @@ class HomeScreen extends StatelessWidget {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(child: _buildHeader()),
-            SliverToBoxAdapter(child: _buildSearchBar()),
             SliverToBoxAdapter(child: _buildCreateGameButton()),
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.only(bottom: 16),
-                child: Column(
-                  children: [SportFilterChips()],
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(child: _buildSectionTitle('👥 НАБОР ИГРОКОВ')),
-            SliverToBoxAdapter(child: _buildPlayersList()),
-            SliverToBoxAdapter(child: _buildSectionTitle('⚡ ПЛОЩАДКИ')),
+            SliverToBoxAdapter(child: _buildSectionTitle('РЕКОМЕНДУЕМ СЕГОДНЯ')),
             SliverToBoxAdapter(child: _buildVenuesList()),
             const SliverToBoxAdapter(child: SizedBox(height: 20)),
           ],
@@ -103,42 +88,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      child: Container(
-        height: 50,
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 14),
-            const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Поиск игры или площадки...',
-                style: AppTextStyles.bodySM,
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.all(6),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.tune, color: AppColors.background, size: 16),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildCreateGameButton() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -190,40 +139,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPlayersList() {
-    final controller = Get.find<PlayerGroupController>();
-    return Obx(() {
-      if (controller.isLoading.value) {
-        return const ShimmerLoader(itemCount: 3, itemHeight: 100);
-      }
-      if (controller.error.value.isNotEmpty) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: ErrorState(
-            message: controller.error.value,
-            onRetry: controller.fetchGroups,
-          ),
-        );
-      }
-      if (controller.groups.isEmpty) {
-        return const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
-          child: EmptyState(
-            icon: Icons.group_outlined,
-            message: 'Нет открытых игр',
-            subtitle: 'Создайте свою игру или проверьте позже',
-          ),
-        );
-      }
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: controller.groups.map((g) => PlayerCard(group: g)).toList(),
-        ),
-      );
-    });
-  }
-
   Widget _buildVenuesList() {
     final controller = Get.find<VenueController>();
     return Obx(() {
@@ -239,10 +154,11 @@ class HomeScreen extends StatelessWidget {
           ),
         );
       }
+      final featured = controller.venues.take(2).toList();
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
-          children: controller.venues.map((v) => VenueCard(venue: v)).toList(),
+          children: featured.map((v) => VenueCard(venue: v)).toList(),
         ),
       );
     });

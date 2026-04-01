@@ -1,4 +1,4 @@
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart'; // включить после добавления google-services.json
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -18,7 +18,7 @@ import 'services/player_group_service.dart';
 import 'services/chat_service.dart';
 import 'services/profile_service.dart';
 import 'services/settings_service.dart';
-import 'services/fcm_service.dart';
+// import 'services/fcm_service.dart'; // включить после добавления google-services.json
 import 'screens/home_screen.dart';
 import 'screens/games_screen.dart';
 import 'screens/chats_screen.dart';
@@ -35,10 +35,9 @@ Future<void> main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
-  // Firebase — нужен google-services.json (Android) / GoogleService-Info.plist (iOS)
-  // Если файлы ещё не добавлены — закомментируй эти две строки:
-  await Firebase.initializeApp();
-  await FcmService().init();
+  // Firebase push-уведомления — раскомментировать после добавления google-services.json:
+  // await Firebase.initializeApp();
+  // await FcmService().init();
 
   Get.put<AuthService>(AuthService());
   Get.put<AuthController>(AuthController());
@@ -55,7 +54,7 @@ Future<void> main() async {
   Get.put<NavController>(NavController());
   Get.lazyPut<SettingsService>(() => SettingsService());
   Get.lazyPut<SettingsController>(() => SettingsController());
-  Get.put<FcmService>(FcmService());
+  // Get.put<FcmService>(FcmService()); // включить после добавления google-services.json
   runApp(const OynoApp());
 }
 

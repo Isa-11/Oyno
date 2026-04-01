@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../controllers/auth_controller.dart';
-import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -45,7 +44,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     _isLoading.value = false;
     if (error == null) {
-      Get.until((route) => route.isFirst);
+      if (Navigator.of(context).canPop()) {
+        Get.back(result: true);
+      }
     } else {
       _errorMsg.value = error;
     }
@@ -160,7 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text('Уже есть аккаунт?', style: AppTextStyles.bodySM),
                   const SizedBox(width: 6),
                   GestureDetector(
-                    onTap: () => Get.off(() => const LoginScreen()),
+                    onTap: () => Get.back(),
                     child: Text('Войти',
                         style: AppTextStyles.bodySM
                             .copyWith(color: AppColors.accent)),

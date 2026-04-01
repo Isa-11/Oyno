@@ -11,6 +11,15 @@ class ChatService extends BaseClient {
             .toList(),
       );
 
+  Future<ApiResponse<List<ChatUserSearch>>> searchUsers(String query) =>
+      getRequest<List<ChatUserSearch>>(
+        'chats/users/',
+        query: {'q': query},
+        decoder: (json) => (json as List)
+            .map((e) => ChatUserSearch.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+
   Future<ApiResponse<List<ChatMessage>>> getGameMessages(int gameId) =>
       getRequest<List<ChatMessage>>(
         'chats/game/$gameId/',

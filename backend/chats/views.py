@@ -149,5 +149,9 @@ class UserListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        users = User.objects.exclude(id=request.user.id).values('id', 'username')
+        query = request.query_params.get('q', '').strip()
+        users = User.objects.exclude(id=request.user.id)
+        if query:
+            users = users.filter(username__icontains=query)
+        users = users.order_by('username').values('id', 'username')[:20]
         return Response(list(users))
