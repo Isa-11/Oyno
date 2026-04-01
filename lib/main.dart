@@ -9,12 +9,14 @@ import 'controllers/game_controller.dart';
 import 'controllers/player_group_controller.dart';
 import 'controllers/chat_controller.dart';
 import 'controllers/profile_controller.dart';
+import 'controllers/settings_controller.dart';
 import 'services/venue_service.dart';
 import 'services/auth_service.dart';
 import 'services/game_service.dart';
 import 'services/player_group_service.dart';
 import 'services/chat_service.dart';
 import 'services/profile_service.dart';
+import 'services/settings_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/games_screen.dart';
 import 'screens/chats_screen.dart';
@@ -41,6 +43,9 @@ void main() {
   Get.lazyPut<ChatController>(() => ChatController());
   Get.lazyPut<ProfileService>(() => ProfileService());
   Get.lazyPut<ProfileController>(() => ProfileController());
+  Get.put<NavController>(NavController());
+  Get.lazyPut<SettingsService>(() => SettingsService());
+  Get.lazyPut<SettingsController>(() => SettingsController());
   runApp(const OynoApp());
 }
 
@@ -80,7 +85,7 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final NavController nav = Get.put(NavController());
+    final NavController nav = Get.find<NavController>();
 
     return Obx(() => Scaffold(
           backgroundColor: AppColors.background,

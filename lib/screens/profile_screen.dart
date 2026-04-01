@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
+import '../controllers/nav_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../controllers/settings_controller.dart';
 import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -193,11 +195,7 @@ class ProfileScreen extends StatelessWidget {
         _menuItem(
           icon: Icons.chat_bubble_outline,
           label: 'МОИ ЧАТЫ',
-          onTap: () {
-            Get.find<ProfileController>();
-            // Переключиться на таб чатов
-            Get.back();
-          },
+          onTap: () => Get.find<NavController>().changePage(2),
         ),
         _menuItem(
           icon: Icons.settings_outlined,
@@ -389,6 +387,14 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _showSettingsSheet(BuildContext context) {
+    final s = Get.find<SettingsController>();
+    final items = [
+      ('🔔', 'Уведомления', 'notifications', s.notifications),
+      ('🌙', 'Тёмная тема', 'dark_theme', s.darkTheme),
+      ('📍', 'Геолокация', 'geolocation', s.geolocation),
+      ('🔒', 'Приватность', 'privacy', s.privacy),
+    ];
+
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.cardBackground,
@@ -411,12 +417,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Text('НАСТРОЙКИ', style: AppTextStyles.headingMD),
             const SizedBox(height: 20),
-            ...[
-              ('🔔', 'Уведомления', true),
-              ('🌙', 'Тёмная тема', true),
-              ('📍', 'Геолокация', false),
-              ('🔒', 'Приватность', true),
-            ].map((item) => Container(
+            ...items.map((item) => Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 14),
@@ -427,20 +428,18 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Text(item.$1,
-                          style: const TextStyle(fontSize: 20)),
+                      Text(item.$1, style: const TextStyle(fontSize: 20)),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(item.$2,
-                            style: AppTextStyles.labelBold),
+                        child: Text(item.$2, style: AppTextStyles.labelBold),
                       ),
-                      Switch(
-                        value: item.$3,
-                        onChanged: (_) {},
-                        activeThumbColor: AppColors.accent,
-                        activeTrackColor:
-                            AppColors.accent.withValues(alpha: 0.3),
-                      ),
+                      Obx(() => Switch(
+                            value: item.$4.value,
+                            onChanged: (v) => s.toggle(item.$3, v),
+                            activeThumbColor: AppColors.accent,
+                            activeTrackColor:
+                                AppColors.accent.withValues(alpha: 0.3),
+                          )),
                     ],
                   ),
                 )),

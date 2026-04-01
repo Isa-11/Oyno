@@ -13,6 +13,17 @@ class UserProfile(models.Model):
         return f'{self.user.username} — {self.phone}'
 
 
+class UserSettings(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
+    notifications = models.BooleanField(default=True)
+    dark_theme = models.BooleanField(default=True)
+    geolocation = models.BooleanField(default=False)
+    privacy = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'Settings({self.user.username})'
+
+
 class PhoneVerification(models.Model):
     PURPOSES = [('register', 'Регистрация'), ('reset', 'Сброс пароля')]
 

@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer
-from .models import PhoneVerification, UserProfile
+from .models import PhoneVerification, UserProfile, UserSettings
 from .sms import send_sms
 
 
@@ -200,6 +200,36 @@ class ResetPasswordView(APIView):
         PhoneVerification.objects.filter(phone=phone, purpose='reset').delete()
 
         return Response({'detail': 'Пароль успешно изменён'})
+
+
+class SettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def _get_or_create(self, user):
+        obj, _ = UserSettings.objects.get_or_create(user=user)
+        return obj
+
+    def get(self, request):
+        s = self._get_or_create(request.user)
+        return Response({
+            'notifications': s.notifications,
+            'dark_theme': s.dark_theme,
+            'geolocation': s.geolocation,
+            'privacy': s.privacy,
+        })
+
+    def patch(self, request):
+        s = self._get_or_create(request.user)
+        for field in ('notifications', 'dark_theme', 'geolocation', 'privacy'):
+            if field in request.data:
+                setattr(s, field, bool(request.data[field]))
+        s.save()
+        return Response({
+            'notifications': s.notifications,
+            'dark_theme': s.dark_theme,
+            'geolocation': s.geolocation,
+            'privacy': s.privacy,
+        })
 
 
 def _verify_code(phone: str, code: str, purpose: str):

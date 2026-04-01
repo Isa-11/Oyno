@@ -7,7 +7,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ─── Security ────────────────────────────────────────────────────────────────
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
 DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+_allowed = config('ALLOWED_HOSTS', default='localhost,127.0.0.1')
+ALLOWED_HOSTS = ['*'] if _allowed.strip() == '*' else [h.strip() for h in _allowed.split(',') if h.strip()]
 
 # ─── Applications ─────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
@@ -31,17 +32,22 @@ INSTALLED_APPS = [
 
 ASGI_APPLICATION = 'oyno.asgi.application'
 
-# ─── Channel Layers (Redis) ───────────────────────────────────────────────────
-REDIS_URL = config('REDIS_URL', default='redis://localhost:6379')
+# ─── Channel Layers (Redis в проде, InMemory локально) ───────────────────────
+REDIS_URL = config('REDIS_URL', default='')
 
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [REDIS_URL],
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {'hosts': [REDIS_URL]},
         },
-    },
-}
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
 
 # ─── SMS / Twilio ─────────────────────────────────────────────────────────────
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
@@ -79,17 +85,25 @@ TEMPLATES = [
     },
 ]
 
-# ─── Database ─────────────────────────────────────────────────────────────────
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME':     config('DB_NAME',     default='oyno'),
-        'USER':     config('DB_USER',     default='oyno'),
-        'PASSWORD': config('DB_PASSWORD', default='oyno'),
-        'HOST':     config('DB_HOST',     default='db'),
-        'PORT':     config('DB_PORT',     default='5432'),
+# ─── Database (SQLite локально, PostgreSQL в проде) ───────────────────────────
+if config('USE_SQLITE', default=False, cast=bool):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME':     config('DB_NAME',     default='oyno'),
+            'USER':     config('DB_USER',     default='oyno'),
+            'PASSWORD': config('DB_PASSWORD', default='oyno'),
+            'HOST':     config('DB_HOST',     default='db'),
+            'PORT':     config('DB_PORT',     default='5432'),
+        }
+    }
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = config(
