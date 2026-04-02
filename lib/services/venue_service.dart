@@ -2,14 +2,6 @@ import '../models/models.dart';
 import 'api_response.dart';
 import 'base_client.dart';
 
-class VenueSlot {
-  final String time;
-  final bool available;
-  VenueSlot({required this.time, required this.available});
-  factory VenueSlot.fromJson(Map<String, dynamic> json) =>
-      VenueSlot(time: json['time'] as String, available: json['available'] as bool);
-}
-
 class VenueSlotsResult {
   final int venueId;
   final String date;
@@ -25,7 +17,7 @@ class VenueSlotsResult {
     date: json['date'] as String,
     opensAt: json['opens_at'] as String,
     closesAt: json['closes_at'] as String,
-    slots: (json['slots'] as List).map((e) => VenueSlot.fromJson(e)).toList(),
+    slots: (json['slots'] as List).map((e) => VenueSlot.fromJson(e as Map<String, dynamic>)).toList(),
   );
 }
 

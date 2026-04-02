@@ -3,11 +3,12 @@ import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../models/models.dart';
 import '../controllers/auth_controller.dart';
+import '../services/venue_service.dart';
+import '../services/booking_service.dart';
 import 'login_screen.dart';
 
 class VenueDetailScreen extends StatefulWidget {
   final Venue venue;
-
   const VenueDetailScreen({super.key, required this.venue});
 
   @override
@@ -15,18 +16,141 @@ class VenueDetailScreen extends StatefulWidget {
 }
 
 class _VenueDetailScreenState extends State<VenueDetailScreen> {
-  int? _selectedSlot;
-  bool _booked = false;
+  int? _selectedSlotIndex;
+  bool _booking = false;
 
-  final List<String> _timeSlots = [
-    '08:00', '09:00', '10:00', '12:00',
-    '14:00', '16:00', '18:00', '20:00',
-  ];
+  // Слоты с бэкенда
+  List<VenueSlot> _slots = [];
+  bool _loadingSlots = false;
+  String? _slotsError;
 
-  final List<bool> _available = [
-    false, true, true, false,
-    true, true, false, true,
-  ];
+  // Выбранная дата (сегодня по умолчанию)
+  DateTime _selectedDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSlots();
+  }
+
+  Future<void> _loadSlots() async {
+    setState(() { _loadingSlots = true; _slotsError = null; _selectedSlotIndex = null; });
+    final dateStr = _formatDate(_selectedDate);
+    final res = await Get.find<VenueService>().getSlots(widget.venue.id ?? 0, dateStr);
+    if (!mounted) return;
+    if (res.isSuccess && res.data != null) {
+      setState(() { _slots = res.data!.slots; _loadingSlots = false; });
+    } else {
+      setState(() { _slotsError = res.error ?? 'Ошибка загрузки'; _loadingSlots = false; });
+    }
+  }
+
+  String _formatDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  String _weekDay(DateTime d) {
+    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    return days[d.weekday - 1];
+  }
+
+  Future<void> _book() async {
+    if (_selectedSlotIndex == null || _booking) return;
+
+    final auth = Get.find<AuthController>();
+    if (!auth.isLoggedIn.value) {
+      final result = await Get.to(() => const LoginScreen());
+      if (result != true) return;
+    }
+
+    setState(() => _booking = true);
+
+    final slot = _slots[_selectedSlotIndex!];
+    final res = await Get.find<BookingService>().createBooking(
+      venueId: widget.venue.id ?? 0,
+      date: _formatDate(_selectedDate),
+      timeSlot: slot.time,
+    );
+
+    if (!mounted) return;
+    setState(() => _booking = false);
+
+    if (res.isSuccess) {
+      _showConfirmDialog(slot.time);
+    } else {
+      Get.snackbar(
+        'Ошибка',
+        res.error ?? 'Не удалось забронировать',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.dangerRed,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+    }
+  }
+
+  void _showConfirmDialog(String time) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        backgroundColor: AppColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.accent, width: 1.5),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72, height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Text('✓', style: TextStyle(fontSize: 36, color: AppColors.accent)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text('ЗАБРОНИРОВАНО!', style: AppTextStyles.headingMD),
+              const SizedBox(height: 10),
+              Text(
+                widget.venue.name,
+                style: AppTextStyles.bodyMD.copyWith(color: AppColors.accent),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${_weekDay(_selectedDate)}, ${_selectedDate.day}.${_selectedDate.month.toString().padLeft(2, '0')} · $time',
+                style: AppTextStyles.bodySM,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () { Get.back(); Get.back(); },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text('ОТЛИЧНО',
+                        style: AppTextStyles.labelBold
+                            .copyWith(color: AppColors.background)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +165,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                   SliverToBoxAdapter(child: _buildImageHeader()),
                   SliverToBoxAdapter(child: _buildInfo()),
                   SliverToBoxAdapter(child: _buildDescription()),
+                  SliverToBoxAdapter(child: _buildDatePicker()),
                   SliverToBoxAdapter(child: _buildTimeSlots()),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 ],
@@ -57,8 +182,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
     return Stack(
       children: [
         SizedBox(
-          width: double.infinity,
-          height: 260,
+          width: double.infinity, height: 260,
           child: Image.network(
             widget.venue.imageUrl,
             fit: BoxFit.cover,
@@ -72,8 +196,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
           height: 260,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
               colors: [
                 AppColors.background.withValues(alpha: 0.6),
                 Colors.transparent,
@@ -83,13 +206,11 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
           ),
         ),
         Positioned(
-          top: 16,
-          left: 20,
+          top: 16, left: 20,
           child: GestureDetector(
             onTap: () => Get.back(),
             child: Container(
-              width: 44,
-              height: 44,
+              width: 44, height: 44,
               decoration: BoxDecoration(
                 color: AppColors.background.withValues(alpha: 0.85),
                 borderRadius: BorderRadius.circular(12),
@@ -101,8 +222,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
           ),
         ),
         Positioned(
-          top: 16,
-          right: 20,
+          top: 16, right: 20,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
@@ -115,22 +235,15 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
               children: [
                 const Text('⭐', style: TextStyle(fontSize: 14)),
                 const SizedBox(width: 5),
-                Text(
-                  widget.venue.rating.toString(),
-                  style: AppTextStyles.labelBold,
-                ),
+                Text(widget.venue.rating.toString(), style: AppTextStyles.labelBold),
               ],
             ),
           ),
         ),
         Positioned(
-          bottom: 16,
-          left: 20,
-          right: 20,
-          child: Text(
-            widget.venue.name,
-            style: AppTextStyles.headingXL.copyWith(color: AppColors.accent),
-          ),
+          bottom: 16, left: 20, right: 20,
+          child: Text(widget.venue.name,
+              style: AppTextStyles.headingXL.copyWith(color: AppColors.accent)),
         ),
       ],
     );
@@ -164,7 +277,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
                 _divider(),
                 _statChip('⭐', '${widget.venue.rating}', 'РЕЙТИНГ'),
                 _divider(),
-                _statChip('🏟️', '1000 М²', 'ПЛОЩАДЬ'),
+                _statChip('🕐', '${widget.venue.opensAt}–${widget.venue.closesAt}', 'ЧАСЫ'),
               ],
             ),
           ),
@@ -187,11 +300,8 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
             Icon(icon, color: AppColors.textSecondary, size: 15),
             const SizedBox(width: 6),
             Expanded(
-              child: Text(
-                text,
-                style: AppTextStyles.bodySM,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(text, style: AppTextStyles.bodySM,
+                  overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
@@ -211,9 +321,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
     );
   }
 
-  Widget _divider() {
-    return Container(width: 1, height: 44, color: AppColors.divider);
-  }
+  Widget _divider() => Container(width: 1, height: 44, color: AppColors.divider);
 
   Widget _buildDescription() {
     return Padding(
@@ -233,18 +341,15 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
             const SizedBox(height: 10),
             Text(
               'Профессиональная площадка с современным покрытием. '
-              'Раздевалки, душевые, парковка. Аренда инвентаря доступна на месте. '
-              'Трибуны для зрителей, освещение для вечерних игр.',
+              'Раздевалки, душевые, парковка. Аренда инвентаря доступна на месте.',
               style: AppTextStyles.bodySM.copyWith(height: 1.6),
             ),
             const SizedBox(height: 14),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 8, runSpacing: 8,
               children: ['🚿 Душевые', '🅿️ Парковка', '💡 Освещение', '👕 Аренда формы']
                   .map((tag) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(8),
@@ -260,6 +365,68 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
     );
   }
 
+  Widget _buildDatePicker() {
+    final today = DateTime.now();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('ВЫБРАТЬ ДАТУ', style: AppTextStyles.headingMD),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 66,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: 7,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, i) {
+                final date = today.add(Duration(days: i));
+                final isSelected = _formatDate(date) == _formatDate(_selectedDate);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() { _selectedDate = date; _selectedSlotIndex = null; });
+                    _loadSlots();
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 52,
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.accent : AppColors.cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? AppColors.accent : AppColors.divider,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _weekDay(date),
+                          style: AppTextStyles.bodySM.copyWith(
+                            fontSize: 11,
+                            color: isSelected ? AppColors.background : AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${date.day}',
+                          style: AppTextStyles.labelBold.copyWith(
+                            color: isSelected ? AppColors.background : AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTimeSlots() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -268,65 +435,98 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
         children: [
           Text('ВЫБРАТЬ ВРЕМЯ', style: AppTextStyles.headingMD),
           const SizedBox(height: 14),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 2.2,
-            ),
-            itemCount: _timeSlots.length,
-            itemBuilder: (_, i) {
-              final isSelected = _selectedSlot == i;
-              final isAvail = _available[i];
-              return GestureDetector(
-                onTap: isAvail ? () => setState(() => _selectedSlot = i) : null,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.accent
-                        : isAvail
-                            ? AppColors.cardBackground
-                            : AppColors.surface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
+          if (_loadingSlots)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: CircularProgressIndicator(color: AppColors.accent),
+              ),
+            )
+          else if (_slotsError != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    Text(_slotsError!, style: AppTextStyles.bodySM,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: _loadSlots,
+                      child: Text('Повторить',
+                          style: AppTextStyles.bodySM
+                              .copyWith(color: AppColors.accent)),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (_slots.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text('Нет доступных слотов', style: AppTextStyles.bodySM),
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 2.2,
+              ),
+              itemCount: _slots.length,
+              itemBuilder: (_, i) {
+                final slot = _slots[i];
+                final isSelected = _selectedSlotIndex == i;
+                final isAvail = slot.available;
+                return GestureDetector(
+                  onTap: isAvail ? () => setState(() => _selectedSlotIndex = i) : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.accent
-                          : isAvail
-                              ? AppColors.divider
-                              : Colors.transparent,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      _timeSlots[i],
-                      style: AppTextStyles.labelBold.copyWith(
+                          : isAvail ? AppColors.cardBackground : AppColors.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
                         color: isSelected
-                            ? AppColors.background
-                            : isAvail
-                                ? AppColors.textPrimary
-                                : AppColors.textSecondary.withValues(alpha: 0.4),
-                        fontSize: 13,
+                            ? AppColors.accent
+                            : isAvail ? AppColors.divider : Colors.transparent,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        slot.time,
+                        style: AppTextStyles.labelBold.copyWith(
+                          color: isSelected
+                              ? AppColors.background
+                              : isAvail
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary.withValues(alpha: 0.4),
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _legend(AppColors.cardBackground, AppColors.divider, 'Свободно'),
-              const SizedBox(width: 16),
-              _legend(AppColors.surface, Colors.transparent, 'Занято'),
-              const SizedBox(width: 16),
-              _legend(AppColors.accent, AppColors.accent, 'Выбрано'),
-            ],
-          ),
+                );
+              },
+            ),
+          if (_slots.isNotEmpty && !_loadingSlots) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _legend(AppColors.cardBackground, AppColors.divider, 'Свободно'),
+                const SizedBox(width: 16),
+                _legend(AppColors.surface, Colors.transparent, 'Занято'),
+                const SizedBox(width: 16),
+                _legend(AppColors.accent, AppColors.accent, 'Выбрано'),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -336,8 +536,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
     return Row(
       children: [
         Container(
-          width: 14,
-          height: 14,
+          width: 14, height: 14,
           decoration: BoxDecoration(
             color: fill,
             borderRadius: BorderRadius.circular(4),
@@ -351,6 +550,10 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
   }
 
   Widget _buildBottomBar() {
+    final selectedTime = _selectedSlotIndex != null
+        ? _slots[_selectedSlotIndex!].time
+        : null;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       decoration: const BoxDecoration(
@@ -363,14 +566,9 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              Text(widget.venue.price, style: AppTextStyles.headingAccent),
               Text(
-                widget.venue.price,
-                style: AppTextStyles.headingAccent,
-              ),
-              Text(
-                _selectedSlot != null
-                    ? 'Время: ${_timeSlots[_selectedSlot!]}'
-                    : 'Выберите время',
+                selectedTime != null ? 'Время: $selectedTime' : 'Выберите время',
                 style: AppTextStyles.bodySM,
               ),
             ],
@@ -378,45 +576,31 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: GestureDetector(
-              onTap: _selectedSlot == null
-                  ? null
-                  : () async {
-                      final auth = Get.find<AuthController>();
-                      if (!auth.isLoggedIn.value) {
-                        final result = await Get.to(() => const LoginScreen());
-                        if (result != true) return;
-                      }
-                      setState(() => _booked = true);
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: AppColors.confirmGreen,
-                          content: Text(
-                            '✓ Забронировано на ${_timeSlots[_selectedSlot!]}!',
-                            style: AppTextStyles.labelBold
-                                .copyWith(color: Colors.white),
-                          ),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                      Future.delayed(const Duration(seconds: 2), () => Get.back());
-                    },
+              onTap: selectedTime == null ? null : _book,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  color: _selectedSlot != null ? AppColors.accent : AppColors.surface,
+                  color: selectedTime != null ? AppColors.accent : AppColors.surface,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
-                  child: Text(
-                    _booked ? '✓ ЗАБРОНИРОВАНО' : 'ЗАБРОНИРОВАТЬ',
-                    style: AppTextStyles.headingMD.copyWith(
-                      color: _selectedSlot != null
-                          ? AppColors.background
-                          : AppColors.textSecondary,
-                    ),
-                  ),
+                  child: _booking
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.background,
+                          ),
+                        )
+                      : Text(
+                          'ЗАБРОНИРОВАТЬ',
+                          style: AppTextStyles.headingMD.copyWith(
+                            color: selectedTime != null
+                                ? AppColors.background
+                                : AppColors.textSecondary,
+                          ),
+                        ),
                 ),
               ),
             ),

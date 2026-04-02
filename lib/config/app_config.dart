@@ -1,9 +1,8 @@
 /// Централизованный конфиг URL.
 ///
-/// Для разработки поменяй [_devApiBase] на IP своего компьютера в локальной сети.
-/// Для production поменяй [_prodApiBase] на свой домен.
-///
-/// Переключение dev/prod: измени [_isProd] на true перед сборкой релиза.
+/// Dev: используй adb reverse tcp:8000 tcp:8000 (USB) → host = 127.0.0.1
+///      Или пропиши IP своего ПК в локальной сети (Settings → Wi-Fi)
+/// Prod: поменяй [_prodHost] на свой домен и [_isProd] на true
 class AppConfig {
   AppConfig._();
 
@@ -11,23 +10,21 @@ class AppConfig {
   /// false → локальный dev-сервер
   static const bool _isProd = false;
 
-  // ── Dev (локальная сеть) ───────────────────────────────────────────────────
-  // Замени на IP своего ПК: Settings → Wi-Fi → свойства сети
-  // Android-эмулятор: используй 10.0.2.2 вместо 127.0.0.1
-  static const String _devHost = '127.0.0.1'; // IP компьютера в локальной сети
-  static const String _devApiBase = 'http://$_devHost:8000/api/';
-  static const String _devWsBase  = 'ws://$_devHost:8000/ws/';
+  // ── Dev ───────────────────────────────────────────────────────────────────
+  // USB (adb reverse tcp:8000 tcp:8000): 127.0.0.1
+  // Wi-Fi (та же сеть):                 твой IP, например 192.168.1.100
+  static const String _devHost = '127.0.0.1';
+  static const int    _devPort = 8000;
 
-  // ── Production ─────────────────────────────────────────────────────────────
-  static const String _prodApiBase = 'https://yourdomain.com/api/'; // ← домен
-  static const String _prodWsBase  = 'wss://yourdomain.com/ws/';
+  // ── Production ────────────────────────────────────────────────────────────
+  static const String _prodHost = 'yourdomain.com'; // ← сюда домен
 
-  // ── Публичные геттеры ──────────────────────────────────────────────────────
-  static String get apiBaseUrl => _isProd ? _prodApiBase : _devApiBase;
-  static String get wsBaseUrl {
-    final raw = _isProd ? _prodWsBase : _devWsBase;
-    if (raw.startsWith('http://')) return 'ws://${raw.substring('http://'.length)}';
-    if (raw.startsWith('https://')) return 'wss://${raw.substring('https://'.length)}';
-    return raw;
-  }
+  // ── Публичные геттеры ─────────────────────────────────────────────────────
+  static String get apiBaseUrl => _isProd
+      ? 'https://$_prodHost/api/'
+      : 'http://$_devHost:$_devPort/api/';
+
+  static String get wsBaseUrl => _isProd
+      ? 'wss://$_prodHost/ws/'
+      : 'ws://$_devHost:$_devPort/ws/';
 }

@@ -80,6 +80,7 @@ class Venue {
 }
 
 class GameItem {
+  final int? id;
   final String venueName;
   final String sport;
   final String sportEmoji;
@@ -89,6 +90,7 @@ class GameItem {
   final String status;
 
   GameItem({
+    this.id,
     required this.venueName,
     required this.sport,
     required this.sportEmoji,
@@ -99,6 +101,7 @@ class GameItem {
   });
 
   factory GameItem.fromJson(Map<String, dynamic> json) => GameItem(
+        id: json['id'] as int?,
         venueName: json['venue_name'] as String? ?? '',
         sport: json['sport'] as String? ?? '',
         sportEmoji: json['sport_emoji'] as String? ?? '🏅',
@@ -184,6 +187,45 @@ class ChatMessage {
         isMine: json['is_mine'] as bool? ?? false,
         text: json['text'] as String? ?? '',
         time: json['time'] as String? ?? '',
+      );
+}
+
+class VenueSlot {
+  final String time;
+  final bool available;
+
+  VenueSlot({
+    required this.time,
+    required this.available,
+  });
+
+  factory VenueSlot.fromJson(Map<String, dynamic> json) => VenueSlot(
+        time: json['time'] as String? ?? '',
+        available: json['available'] as bool? ?? false,
+      );
+}
+
+class Review {
+  final int id;
+  final String username;
+  final int rating;
+  final String text;
+  final String createdAt;
+
+  Review({
+    required this.id,
+    required this.username,
+    required this.rating,
+    required this.text,
+    required this.createdAt,
+  });
+
+  factory Review.fromJson(Map<String, dynamic> json) => Review(
+        id: json['id'] as int? ?? 0,
+        username: json['username'] as String? ?? '',
+        rating: json['rating'] as int? ?? 0,
+        text: json['text'] as String? ?? '',
+        createdAt: json['created_at'] as String? ?? '',
       );
 }
 

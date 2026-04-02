@@ -10,6 +10,11 @@ import 'auth_storage.dart';
 class BaseClient extends GetConnect {
   static String get apiBaseUrl => AppConfig.apiBaseUrl;
 
+  String _buildAbsoluteUrl(String endpoint) {
+    final base = Uri.parse(AppConfig.apiBaseUrl);
+    return base.resolve(endpoint).toString();
+  }
+
   @override
   void onInit() {
     httpClient.baseUrl = AppConfig.apiBaseUrl;
@@ -36,7 +41,7 @@ class BaseClient extends GetConnect {
     T Function(dynamic json)? decoder,
   }) =>
       _withRefresh(() async {
-        final r = await get(endpoint, query: query);
+        final r = await get(_buildAbsoluteUrl(endpoint), query: query);
         return _fromResponse<T>(r, decoder);
       });
 
@@ -46,7 +51,7 @@ class BaseClient extends GetConnect {
     T Function(dynamic json)? decoder,
   }) =>
       _withRefresh(() async {
-        final r = await post(endpoint, body);
+        final r = await post(_buildAbsoluteUrl(endpoint), body);
         return _fromResponse<T>(r, decoder);
       });
 
@@ -56,7 +61,7 @@ class BaseClient extends GetConnect {
     T Function(dynamic json)? decoder,
   }) =>
       _withRefresh(() async {
-        final r = await patch(endpoint, body);
+        final r = await patch(_buildAbsoluteUrl(endpoint), body);
         return _fromResponse<T>(r, decoder);
       });
 
@@ -66,7 +71,7 @@ class BaseClient extends GetConnect {
     T Function(dynamic json)? decoder,
   }) =>
       _withRefresh(() async {
-        final r = await put(endpoint, body);
+        final r = await put(_buildAbsoluteUrl(endpoint), body);
         return _fromResponse<T>(r, decoder);
       });
 
@@ -75,7 +80,7 @@ class BaseClient extends GetConnect {
     T Function(dynamic json)? decoder,
   }) =>
       _withRefresh(() async {
-        final r = await delete(endpoint);
+        final r = await delete(_buildAbsoluteUrl(endpoint));
         return _fromResponse<T>(r, decoder);
       });
 
@@ -127,7 +132,7 @@ class BaseClient extends GetConnect {
       if (refreshToken.isEmpty) return false;
 
       final response = await post(
-        'auth/token/refresh/',
+        _buildAbsoluteUrl('auth/token/refresh/'),
         {'refresh': refreshToken},
       );
       if (response.statusCode == 200 && response.body != null) {

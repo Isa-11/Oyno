@@ -57,4 +57,10 @@ class ProfileService extends BaseClient {
         },
         decoder: (json) => UserProfile.fromJson(json as Map<String, dynamic>),
       );
+
+  Future<ApiResponse<Map<String, dynamic>>> getUserProfile(int userId) =>
+      getRequest<Map<String, dynamic>>(
+        'auth/users/$userId/',
+        decoder: (json) => json as Map<String, dynamic>,
+      );
 }

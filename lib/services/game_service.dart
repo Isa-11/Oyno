@@ -50,4 +50,11 @@ class GameService extends BaseClient {
   /// Покинуть игру
   Future<ApiResponse<void>> leaveGame(int gameId) =>
       deleteRequest<void>('games/$gameId/join/');
+
+  /// Получить детали игры с участниками
+  Future<ApiResponse<Map<String, dynamic>>> getGameDetails(int gameId) =>
+      getRequest<Map<String, dynamic>>(
+        'games/$gameId/',
+        decoder: (json) => json as Map<String, dynamic>,
+      );
 }

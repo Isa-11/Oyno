@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 
 class NotificationScreen extends StatelessWidget {
@@ -86,16 +87,23 @@ class NotificationScreen extends StatelessWidget {
             style: AppTextStyles.headingLG,
           ),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
-            ),
-            child: Text(
-              '2 НОВЫХ',
-              style: AppTextStyles.accentBold.copyWith(fontSize: 11),
+          GestureDetector(
+            onTap: () async {
+              final notifyService = Get.find<NotificationService>();
+              await notifyService.markAllAsRead();
+              notifyService.resetUnread();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+              ),
+              child: Text(
+                'ВСЕ ПРОЧИТАНО',
+                style: AppTextStyles.accentBold.copyWith(fontSize: 11),
+              ),
             ),
           ),
         ],

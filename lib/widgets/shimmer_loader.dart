@@ -23,6 +23,7 @@ class ShimmerLoader extends StatelessWidget {
     return Padding(
       padding: padding,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: List.generate(itemCount, (i) => _ShimmerCard(height: itemHeight)),
       ),
     );
@@ -49,7 +50,6 @@ class _ShimmerCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               // Title line
               Container(
@@ -60,6 +60,7 @@ class _ShimmerCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
+              const SizedBox(height: 8),
               // Subtitle line
               Container(
                 height: 10,
@@ -69,6 +70,7 @@ class _ShimmerCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
+              const SizedBox(height: 8),
               // Badge row
               Row(
                 children: [

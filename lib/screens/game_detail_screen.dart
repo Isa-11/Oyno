@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../models/models.dart';
+import '../services/game_service.dart';
 import 'chat_detail_screen.dart';
+import 'other_user_profile_screen.dart';
 
 class GameDetailScreen extends StatefulWidget {
   final GameItem game;
@@ -15,6 +17,42 @@ class GameDetailScreen extends StatefulWidget {
 
 class _GameDetailScreenState extends State<GameDetailScreen> {
   bool _joined = false;
+  Map<String, dynamic>? _gameDetails;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGameDetails();
+  }
+
+  Future<void> _loadGameDetails() async {
+    if (widget.game.id == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    try {
+      final res = await Get.find<GameService>().getGameDetails(widget.game.id!);
+      if (res.isSuccess && res.data != null) {
+        setState(() {
+          _gameDetails = res.data;
+          _joined = res.data?['is_joined'] as bool? ?? false;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = res.error ?? 'Ошибка загрузки игры';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Ошибка: $e';
+        _isLoading = false;
+      });
+    }
+  }
 
   bool get _isFinished => widget.game.status == 'ЗАВЕРШЕН';
   bool get _isConfirmed => widget.game.status == 'ПОДТВЕРЖДЕН';
@@ -25,8 +63,39 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     return AppColors.waitGray;
   }
 
+  Future<void> _joinGame() async {
+    if (widget.game.id == null) return;
+    try {
+      final res = await Get.find<GameService>().joinGame(widget.game.id!);
+      if (res.isSuccess) {
+        setState(() => _joined = true);
+        Get.snackbar('Успешно', 'Вы присоединились к игре', snackPosition: SnackPosition.BOTTOM);
+      } else {
+        Get.snackbar('Ошибка', res.error ?? 'Не удалось присоединиться', snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.snackbar('Ошибка', 'Ошибка: $e', snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: const Center(child: CircularProgressIndicator(color: AppColors.accent)),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Text(_error!, style: AppTextStyles.bodySM),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -182,6 +251,9 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     final parts = widget.game.players.split('/');
     final filled = int.tryParse(parts[0]) ?? 0;
     final total = int.tryParse(parts[1]) ?? 10;
+    
+    // Get real participants from game details if available
+    final participants = _gameDetails?['participants'] as List? ?? [];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -219,24 +291,54 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: List.generate(filled, (i) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.divider),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🏃', style: TextStyle(fontSize: 14)),
-                    const SizedBox(width: 6),
-                    Text('Игрок ${i + 1}', style: AppTextStyles.bodySM),
-                  ],
-                ),
-              );
-            }),
+            children: participants.isNotEmpty
+                ? participants.map((p) {
+                    final username = p['username'] as String? ?? 'Unknown';
+                    return GestureDetector(
+                      onTap: () {
+                        if (p['id'] != null) {
+                          Get.to(() => OtherUserProfileScreen(
+                            userId: p['id'] as int,
+                            username: username,
+                          ));
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.divider),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('🏃', style: TextStyle(fontSize: 14)),
+                            const SizedBox(width: 6),
+                            Text(username, style: AppTextStyles.bodySM),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList()
+                : List.generate(filled, (i) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('🏃', style: TextStyle(fontSize: 14)),
+                          const SizedBox(width: 6),
+                          Text('Игрок ${i + 1}', style: AppTextStyles.bodySM),
+                        ],
+                      ),
+                    );
+                  }),
           ),
         ],
       ),
@@ -250,7 +352,7 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
           child: GestureDetector(
             onTap: _joined
                 ? null
-                : () => setState(() => _joined = true),
+                : _joinGame,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(vertical: 16),

@@ -1,5 +1,5 @@
-// import 'package:firebase_core/firebase_core.dart'; // включить после добавления google-services.json
-import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart'
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'theme/app_theme.dart';
@@ -18,12 +18,16 @@ import 'services/player_group_service.dart';
 import 'services/chat_service.dart';
 import 'services/profile_service.dart';
 import 'services/settings_service.dart';
-// import 'services/fcm_service.dart'; // включить после добавления google-services.json
+import 'services/booking_service.dart';
+import 'services/notification_service.dart';
+import 'services/fcm_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/games_screen.dart';
 import 'screens/chats_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/search_screen.dart';
+import 'screens/other_user_profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,9 +39,9 @@ Future<void> main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
-  // Firebase push-уведомления — раскомментировать после добавления google-services.json:
-  // await Firebase.initializeApp();
-  // await FcmService().init();
+  // Firebase push-уведомления — требует google-services.json в android/app/
+  await Firebase.initializeApp();
+  await FcmService().init();
 
   Get.put<AuthService>(AuthService());
   Get.put<AuthController>(AuthController());
@@ -54,7 +58,9 @@ Future<void> main() async {
   Get.put<NavController>(NavController());
   Get.lazyPut<SettingsService>(() => SettingsService());
   Get.lazyPut<SettingsController>(() => SettingsController());
-  // Get.put<FcmService>(FcmService()); // включить после добавления google-services.json
+  Get.lazyPut<BookingService>(() => BookingService());
+  Get.lazyPut<NotificationService>(() => NotificationService());
+  Get.put<FcmService>(FcmService());
   runApp(const OynoApp());
 }
 
