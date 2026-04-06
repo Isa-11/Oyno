@@ -96,6 +96,9 @@ class ProfileView(APIView):
             'rating': float(profile.rating or 0.0),
             'games_total': games_total,
             'upcoming_games': upcoming,
+            'is_vendor': profile.is_vendor,
+            'game_level': profile.game_level or '',
+            'position': profile.position or '',
         })
 
     def patch(self, request):
@@ -105,6 +108,8 @@ class ProfileView(APIView):
         fcm_token = request.data.get('fcm_token', '').strip()
         city = request.data.get('city', '').strip()
         avatar_data = request.data.get('avatar_data', '').strip()
+        game_level = request.data.get('game_level', '').strip()
+        position = request.data.get('position', '').strip()
 
         if username and username != user.username:
             from django.contrib.auth.models import User
@@ -125,8 +130,11 @@ class ProfileView(APIView):
             profile.city = city
         if 'avatar_data' in request.data:
             profile.avatar_data = avatar_data
-        if fcm_token or 'city' in request.data or 'avatar_data' in request.data:
-            profile.save()
+        if 'game_level' in request.data:
+            profile.game_level = game_level
+        if 'position' in request.data:
+            profile.position = position
+        profile.save()
 
         return Response({
             'id': user.id,
@@ -135,6 +143,9 @@ class ProfileView(APIView):
             'city': profile.city or '',
             'avatar_data': profile.avatar_data or '',
             'rating': float(profile.rating or 0.0),
+            'is_vendor': profile.is_vendor,
+            'game_level': profile.game_level or '',
+            'position': profile.position or '',
         })
 
 

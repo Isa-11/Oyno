@@ -43,4 +43,26 @@ class VenueService extends BaseClient {
         query: {'date': date},
         decoder: (json) => VenueSlotsResult.fromJson(json as Map<String, dynamic>),
       );
+
+  Future<ApiResponse<List<Venue>>> getMyVenues() =>
+      getRequest<List<Venue>>(
+        'venues/my/',
+        decoder: (json) => (json as List)
+            .map((e) => Venue.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+
+  Future<ApiResponse<Venue>> createVenue(Map<String, dynamic> data) =>
+      postRequest<Venue>(
+        'venues/',
+        data,
+        decoder: (json) => Venue.fromJson(json as Map<String, dynamic>),
+      );
+
+  Future<ApiResponse<Venue>> updateVenue(int id, Map<String, dynamic> data) =>
+      patchRequest<Venue>(
+        'venues/$id/',
+        data,
+        decoder: (json) => Venue.fromJson(json as Map<String, dynamic>),
+      );
 }

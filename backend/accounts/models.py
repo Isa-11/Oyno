@@ -6,12 +6,27 @@ from django.utils import timezone
 
 
 class UserProfile(models.Model):
+    LEVEL_CHOICES = [
+        ('Новичок', 'Новичок'),
+        ('Любитель', 'Любитель'),
+        ('Профи', 'Профи'),
+    ]
+    POSITION_CHOICES = [
+        ('Вратарь', 'Вратарь'),
+        ('Защитник', 'Защитник'),
+        ('Полузащитник', 'Полузащитник'),
+        ('Нападающий', 'Нападающий'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
     fcm_token = models.CharField(max_length=500, blank=True, default='')
     city = models.CharField(max_length=80, blank=True, default='')
     avatar_data = models.TextField(blank=True, default='')
     rating = models.FloatField(default=0.0)
+    is_vendor = models.BooleanField(default=False)
+    game_level = models.CharField(max_length=20, choices=LEVEL_CHOICES, blank=True, default='')
+    position = models.CharField(max_length=20, choices=POSITION_CHOICES, blank=True, default='')
 
     def __str__(self):
         return f'{self.user.username} — {self.phone}'

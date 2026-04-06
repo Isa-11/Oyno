@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Venue
+from .models import Venue, TimeSlot
 
 
 @admin.register(Venue)
@@ -19,3 +19,12 @@ class VenueAdmin(admin.ModelAdmin):
             'fields': ('opens_at', 'closes_at')
         }),
     )
+
+
+@admin.register(TimeSlot)
+class TimeSlotAdmin(admin.ModelAdmin):
+    list_display = ('venue', 'start_time', 'end_time', 'is_booked')
+    list_filter = ('is_booked', 'venue')
+    list_editable = ('is_booked',)
+    search_fields = ('venue__name',)
+    date_hierarchy = 'start_time'

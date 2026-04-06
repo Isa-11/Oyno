@@ -10,6 +10,18 @@ class GameCard extends StatelessWidget {
 
   const GameCard({super.key, required this.game});
 
+  IconData _sportIcon(String sport) {
+    switch (sport.toLowerCase()) {
+      case 'футбол': return Icons.sports_soccer;
+      case 'баскетбол': return Icons.sports_basketball;
+      case 'волейбол': return Icons.sports_volleyball;
+      case 'теннис': return Icons.sports_tennis;
+      case 'плавание': return Icons.pool;
+      case 'хоккей': return Icons.sports_hockey;
+      default: return Icons.sports;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isConfirmed = game.status == 'ПОДТВЕРЖДЕН';
@@ -18,12 +30,12 @@ class GameCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => Get.to(() => GameDetailScreen(game: game)),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.divider, width: 1),
+          border: Border.all(color: AppColors.divider, width: 0.8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,9 +49,19 @@ class GameCard extends StatelessWidget {
                     children: [
                       _statusBadge(isConfirmed, isFinished),
                       const SizedBox(height: 8),
-                      Text(
-                        game.dateTime,
-                        style: AppTextStyles.bodySM,
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today_outlined,
+                              color: AppColors.textSecondary, size: 12),
+                          const SizedBox(width: 4),
+                          Text(
+                            game.dateTime,
+                            style: AppTextStyles.bodySM.copyWith(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -50,60 +72,76 @@ class GameCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.divider),
+                    border: Border.all(color: AppColors.divider, width: 0.8),
                   ),
                   child: Center(
-                    child: Text(
-                      game.sportEmoji,
-                      style: const TextStyle(fontSize: 28),
+                    child: Icon(
+                      _sportIcon(game.sport),
+                      color: AppColors.accent,
+                      size: 26,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Row(
               children: [
                 const Icon(Icons.location_on_outlined,
                     color: AppColors.textSecondary, size: 13),
                 const SizedBox(width: 4),
-                Text(game.location, style: AppTextStyles.bodySM),
-                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    game.location,
+                    style: AppTextStyles.bodySM.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 const Icon(Icons.people_outline,
                     color: AppColors.textSecondary, size: 13),
                 const SizedBox(width: 4),
-                Text(game.players, style: AppTextStyles.bodySM),
+                Text(
+                  game.players,
+                  style: AppTextStyles.bodySM.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               ],
             ),
             if (!isFinished) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     child: GestureDetector(
                       onTap: () => Get.to(() => GameDetailScreen(game: game)),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.divider),
+                          border: Border.all(color: AppColors.divider, width: 0.8),
                         ),
                         child: Center(
                           child: Text(
                             'ПОДРОБНЕЕ',
-                            style: AppTextStyles.labelBold,
+                            style: AppTextStyles.labelBold.copyWith(fontSize: 12),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => Get.to(() => ChatDetailScreen(
                           chat: ChatItem(
@@ -116,8 +154,8 @@ class GameCard extends StatelessWidget {
                           ),
                         )),
                     child: Container(
-                      width: 44,
-                      height: 44,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: AppColors.accent,
                         borderRadius: BorderRadius.circular(10),
@@ -125,7 +163,7 @@ class GameCard extends StatelessWidget {
                       child: const Icon(
                         Icons.chat_bubble_outline,
                         color: AppColors.background,
-                        size: 20,
+                        size: 18,
                       ),
                     ),
                   ),

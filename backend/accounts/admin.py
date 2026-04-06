@@ -4,8 +4,10 @@ from .models import UserProfile, UserSettings, PhoneVerification
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "phone", "city", "rating", "fcm_token")
+    list_display = ("id", "user", "phone", "city", "rating", "is_vendor", "game_level", "position")
     search_fields = ("user__username", "user__email", "phone")
+    list_filter = ("is_vendor", "game_level", "position")
+    list_editable = ("is_vendor",)
     list_select_related = ("user",)
 
 

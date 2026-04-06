@@ -5,6 +5,7 @@ import '../models/models.dart';
 import '../controllers/auth_controller.dart';
 import '../services/venue_service.dart';
 import '../services/booking_service.dart';
+import '../widgets/venue_image.dart';
 import 'login_screen.dart';
 
 class VenueDetailScreen extends StatefulWidget {
@@ -181,16 +182,11 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
   Widget _buildImageHeader() {
     return Stack(
       children: [
-        SizedBox(
-          width: double.infinity, height: 260,
-          child: Image.network(
-            widget.venue.imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              color: AppColors.surface,
-              child: const Icon(Icons.sports, color: AppColors.textSecondary, size: 64),
-            ),
-          ),
+        VenueImage(
+          imageUrl: widget.venue.imageUrl,
+          sport: widget.venue.sport,
+          height: 260,
+          iconSize: 64,
         ),
         Container(
           height: 260,
@@ -324,6 +320,8 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
   Widget _divider() => Container(width: 1, height: 44, color: AppColors.divider);
 
   Widget _buildDescription() {
+    final desc = widget.venue.description.trim();
+    if (desc.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Container(
@@ -339,26 +337,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
           children: [
             Text('О ПЛОЩАДКЕ', style: AppTextStyles.headingMD),
             const SizedBox(height: 10),
-            Text(
-              'Профессиональная площадка с современным покрытием. '
-              'Раздевалки, душевые, парковка. Аренда инвентаря доступна на месте.',
-              style: AppTextStyles.bodySM.copyWith(height: 1.6),
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8, runSpacing: 8,
-              children: ['🚿 Душевые', '🅿️ Парковка', '💡 Освещение', '👕 Аренда формы']
-                  .map((tag) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.divider),
-                        ),
-                        child: Text(tag, style: AppTextStyles.bodySM),
-                      ))
-                  .toList(),
-            ),
+            Text(desc, style: AppTextStyles.bodySM.copyWith(height: 1.6)),
           ],
         ),
       ),

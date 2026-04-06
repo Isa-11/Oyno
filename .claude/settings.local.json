@@ -10,7 +10,9 @@
       "Bash(python manage.py makemigrations --merge --no-input)",
       "Bash(python manage.py runserver 0.0.0.0:8000)",
       "Bash(flutter pub:*)",
-      "Bash(flutter clean:*)"
+      "Bash(flutter clean:*)",
+      "Bash(python manage.py makemigrations accounts venues)",
+      "Bash(python manage.py migrate)"
     ]
   }
 }

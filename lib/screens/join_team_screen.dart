@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../models/models.dart';
+import '../controllers/player_group_controller.dart';
 
 class JoinTeamScreen extends StatefulWidget {
   final PlayerGroup group;
@@ -14,6 +15,7 @@ class JoinTeamScreen extends StatefulWidget {
 
 class _JoinTeamScreenState extends State<JoinTeamScreen> {
   bool _joined = false;
+  bool _loading = false;
 
   String get _sportEmoji {
     switch (widget.group.sport) {
@@ -211,24 +213,45 @@ class _JoinTeamScreenState extends State<JoinTeamScreen> {
 
   Widget _buildJoinButton() {
     return GestureDetector(
-      onTap: () {
-        setState(() => _joined = true);
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Get.back();
-        });
+      onTap: _loading ? null : () async {
+        if (widget.group.id == null) return;
+        setState(() => _loading = true);
+        final ok = await Get.find<PlayerGroupController>().joinGame(widget.group.id!);
+        if (!mounted) return;
+        if (ok) {
+          setState(() { _joined = true; _loading = false; });
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) Get.back();
+          });
+        } else {
+          setState(() => _loading = false);
+          Get.snackbar(
+            'Ошибка',
+            'Не удалось вступить в команду',
+            backgroundColor: AppColors.dangerRed,
+            colorText: AppColors.textPrimary,
+            snackPosition: SnackPosition.TOP,
+          );
+        }
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: AppColors.accent,
+          color: _loading ? AppColors.surface : AppColors.accent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
-          child: Text(
-            '⚡  ВОРВАТЬСЯ В КОМАНДУ',
-            style: AppTextStyles.headingMD.copyWith(color: AppColors.background),
-          ),
+          child: _loading
+              ? const SizedBox(
+                  width: 22, height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.background),
+                )
+              : Text(
+                  '⚡  ВОРВАТЬСЯ В КОМАНДУ',
+                  style: AppTextStyles.headingMD.copyWith(color: AppColors.background),
+                ),
         ),
       ),
     );

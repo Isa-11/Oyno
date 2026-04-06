@@ -51,6 +51,7 @@ class Venue {
   final String price;
   final String sport;
   final String address;
+  final String description;
   final String opensAt;
   final String closesAt;
 
@@ -62,6 +63,7 @@ class Venue {
     required this.price,
     required this.sport,
     required this.address,
+    this.description = '',
     this.opensAt = '07:00',
     this.closesAt = '23:00',
   });
@@ -74,6 +76,7 @@ class Venue {
         price: json['price'] as String? ?? '',
         sport: json['sport'] as String? ?? '',
         address: json['address'] as String? ?? '',
+        description: json['description'] as String? ?? '',
         opensAt: json['opens_at'] as String? ?? '07:00',
         closesAt: json['closes_at'] as String? ?? '23:00',
       );

@@ -1,5 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart'
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'theme/app_theme.dart';
@@ -28,6 +28,7 @@ import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/other_user_profile_screen.dart';
+import 'screens/owner_venues_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -103,21 +104,33 @@ class MainShell extends StatelessWidget {
     ProfileScreen(),
   ];
 
+  static const List<Widget> _ownerScreens = [
+    HomeScreen(),
+    OwnerVenuesScreen(),
+    ChatsScreen(),
+    ProfileScreen(),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final NavController nav = Get.find<NavController>();
+    final ProfileController profile = Get.find<ProfileController>();
 
-    return Obx(() => Scaffold(
-          backgroundColor: AppColors.background,
-          body: IndexedStack(
-            index: nav.currentIndex.value,
-            children: _screens,
-          ),
-          bottomNavigationBar: _buildBottomNav(nav),
-        ));
+    return Obx(() {
+      final isOwner = profile.isOwnerMode.value;
+      final screens = isOwner ? _ownerScreens : _screens;
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: IndexedStack(
+          index: nav.currentIndex.value,
+          children: screens,
+        ),
+        bottomNavigationBar: _buildBottomNav(nav, isOwner),
+      );
+    });
   }
 
-  Widget _buildBottomNav(NavController nav) {
+  Widget _buildBottomNav(NavController nav, bool isOwner) {
     return Obx(() => Container(
           decoration: const BoxDecoration(
             color: AppColors.cardBackground,
@@ -142,9 +155,9 @@ class MainShell extends StatelessWidget {
                   _navItem(
                     index: 1,
                     activeIndex: nav.currentIndex.value,
-                    icon: Icons.calendar_today_outlined,
-                    activeIcon: Icons.calendar_today,
-                    label: 'Игры',
+                    icon: isOwner ? Icons.store_outlined : Icons.calendar_today_outlined,
+                    activeIcon: isOwner ? Icons.store : Icons.calendar_today,
+                    label: isOwner ? 'Площадки' : 'Игры',
                     onTap: () => nav.changePage(1),
                   ),
                   _navItem(

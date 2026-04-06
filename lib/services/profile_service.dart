@@ -10,6 +10,9 @@ class UserProfile {
   final double rating;
   final int gamesTotal;
   final int upcomingGames;
+  final bool isVendor;
+  final String gameLevel;
+  final String position;
 
   UserProfile({
     required this.id,
@@ -20,6 +23,9 @@ class UserProfile {
     required this.rating,
     required this.gamesTotal,
     required this.upcomingGames,
+    this.isVendor = false,
+    this.gameLevel = '',
+    this.position = '',
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
@@ -31,6 +37,9 @@ class UserProfile {
         rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
         gamesTotal: json['games_total'] as int? ?? 0,
         upcomingGames: json['upcoming_games'] as int? ?? 0,
+        isVendor: json['is_vendor'] as bool? ?? false,
+        gameLevel: json['game_level'] as String? ?? '',
+        position: json['position'] as String? ?? '',
       );
 }
 
@@ -46,6 +55,8 @@ class ProfileService extends BaseClient {
     String? email,
     String? city,
     String? avatarData,
+    String? gameLevel,
+    String? position,
   }) =>
       patchRequest<UserProfile>(
         'auth/profile/',
@@ -54,6 +65,8 @@ class ProfileService extends BaseClient {
           if (email != null) 'email': email,
           if (city != null) 'city': city,
           if (avatarData != null) 'avatar_data': avatarData,
+          if (gameLevel != null) 'game_level': gameLevel,
+          if (position != null) 'position': position,
         },
         decoder: (json) => UserProfile.fromJson(json as Map<String, dynamic>),
       );

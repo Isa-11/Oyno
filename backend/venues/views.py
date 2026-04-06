@@ -1,16 +1,31 @@
 import datetime
-from rest_framework import viewsets, filters
+from rest_framework import permissions, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Venue
 from .serializers import VenueSerializer
 
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.owner == request.user
 
-class VenueViewSet(viewsets.ReadOnlyModelViewSet):
+class VenueViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     queryset = Venue.objects.all()
     serializer_class = VenueSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['sport', 'name']
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def my(self, request):
+        qs = self.get_queryset().filter(owner=request.user)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
 
     def get_queryset(self):
         qs = super().get_queryset()

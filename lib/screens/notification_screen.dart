@@ -2,42 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/shimmer_loader.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
-  static final List<Map<String, String>> _notifications = [
-    {
-      'emoji': '⚽',
-      'title': 'FC ALPHA приняли вас',
-      'body': 'Вы успешно вступили в команду. Игра в 18:00.',
-      'time': '5 мин назад',
-    },
-    {
-      'emoji': '⚡',
-      'title': 'Игра подтверждена',
-      'body': 'СПОРТКОМ АРЕНА • 24 ОКТ 20:00 — ваше место забронировано.',
-      'time': '1 час назад',
-    },
-    {
-      'emoji': '🏀',
-      'title': 'BASKET KINGS ищут игрока',
-      'body': 'Нужен 1 игрок на вечернюю игру. Уровень: ПРОФИ.',
-      'time': '3 часа назад',
-    },
-    {
-      'emoji': '🏐',
-      'title': 'Новое сообщение в ВОЛНА',
-      'body': 'Нужен ещё один игрок, пригласи друга!',
-      'time': 'Вчера',
-    },
-    {
-      'emoji': '⭐',
-      'title': 'Ваш рейтинг вырос!',
-      'body': 'После игры 10 ОКТ ваш рейтинг стал 4.9 ⭐',
-      'time': '2 дня назад',
-    },
-  ];
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  final NotificationService _service = Get.find<NotificationService>();
+
+  List<Map<String, dynamic>> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    final res = await _service.getNotifications();
+    if (!mounted) return;
+    if (res.isSuccess && res.data != null) {
+      setState(() { _items = res.data!; _loading = false; });
+    } else {
+      setState(() { _error = res.error ?? 'Не удалось загрузить'; _loading = false; });
+    }
+  }
+
+  Future<void> _markAllRead() async {
+    await _service.markAllAsRead();
+    _service.resetUnread();
+    // Обновляем список — помечаем все как прочитанные локально
+    setState(() {
+      _items = _items.map((n) => {...n, 'is_read': true}).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,14 +53,7 @@ class NotificationScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildAppBar(),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                itemCount: _notifications.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (_, i) => _buildItem(_notifications[i], i < 2),
-              ),
-            ),
+            Expanded(child: _buildBody()),
           ],
         ),
       ),
@@ -70,8 +68,7 @@ class NotificationScreen extends StatelessWidget {
           GestureDetector(
             onTap: () => Get.back(),
             child: Container(
-              width: 44,
-              height: 44,
+              width: 44, height: 44,
               decoration: BoxDecoration(
                 color: AppColors.cardBackground,
                 borderRadius: BorderRadius.circular(12),
@@ -82,17 +79,10 @@ class NotificationScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Text(
-            'УВЕДОМЛЕНИЯ',
-            style: AppTextStyles.headingLG,
-          ),
+          Text('УВЕДОМЛЕНИЯ', style: AppTextStyles.headingLG),
           const Spacer(),
           GestureDetector(
-            onTap: () async {
-              final notifyService = Get.find<NotificationService>();
-              await notifyService.markAllAsRead();
-              notifyService.resetUnread();
-            },
+            onTap: _markAllRead,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
@@ -111,73 +101,133 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildItem(Map<String, String> n, bool isNew) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isNew
-            ? AppColors.accent.withValues(alpha: 0.06)
-            : AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isNew ? AppColors.accent.withValues(alpha: 0.3) : AppColors.divider,
-          width: isNew ? 1.5 : 1,
+  Widget _buildBody() {
+    if (_loading) {
+      return const ShimmerLoader(itemCount: 5, itemHeight: 80);
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!, style: AppTextStyles.bodySM, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: _load,
+              child: Text('Повторить',
+                  style: AppTextStyles.bodySM.copyWith(color: AppColors.accent)),
+            ),
+          ],
         ),
+      );
+    }
+    if (_items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.notifications_none_outlined,
+                size: 64, color: AppColors.textSecondary.withValues(alpha: 0.3)),
+            const SizedBox(height: 16),
+            Text('Уведомлений нет', style: AppTextStyles.bodyMD.copyWith(color: AppColors.textSecondary)),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      color: AppColors.accent,
+      backgroundColor: AppColors.cardBackground,
+      onRefresh: _load,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        itemCount: _items.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (_, i) => _buildItem(_items[i]),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(n['emoji']!, style: const TextStyle(fontSize: 24)),
-            ),
+    );
+  }
+
+  Widget _buildItem(Map<String, dynamic> n) {
+    final isNew = !(n['is_read'] as bool? ?? true);
+    final title = n['title'] as String? ?? '';
+    final body = n['body'] as String? ?? '';
+    final time = n['created_at'] as String? ?? '';
+    final emoji = n['emoji'] as String? ?? '🔔';
+
+    return GestureDetector(
+      onTap: () async {
+        if (isNew && n['id'] != null) {
+          await _service.markAsRead(n['id'] as int);
+          setState(() {
+            _items = _items.map((item) =>
+              item['id'] == n['id'] ? {...item, 'is_read': true} : item
+            ).toList();
+          });
+          _service.decrementUnread();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isNew
+              ? AppColors.accent.withValues(alpha: 0.06)
+              : AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isNew ? AppColors.accent.withValues(alpha: 0.3) : AppColors.divider,
+            width: isNew ? 1.5 : 1,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        n['title']!,
-                        style: AppTextStyles.labelBold,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(emoji, style: const TextStyle(fontSize: 24)),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(title, style: AppTextStyles.labelBold),
                       ),
-                    ),
-                    if (isNew)
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.accent,
-                          shape: BoxShape.circle,
+                      if (isNew)
+                        Container(
+                          width: 8, height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.accent,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
+                    ],
+                  ),
+                  if (body.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(body,
+                        style: AppTextStyles.bodySM,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
                   ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  n['body']!,
-                  style: AppTextStyles.bodySM,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  n['time']!,
-                  style: AppTextStyles.bodySM.copyWith(fontSize: 11),
-                ),
-              ],
+                  if (time.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(time,
+                        style: AppTextStyles.bodySM.copyWith(fontSize: 11)),
+                  ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

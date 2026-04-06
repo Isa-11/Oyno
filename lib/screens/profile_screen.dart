@@ -217,22 +217,83 @@ class ProfileScreen extends StatelessWidget {
           icon: Icons.settings_outlined,
           label: 'НАСТРОЙКИ',
           onTap: () => _showSettingsSheet(context),
-          isLast: true,
         ),
+        _buildOwnerModeSwitch(),
       ],
     );
   }
 
+  Widget _buildOwnerModeSwitch() {
+    return Obx(() {
+      final ctrl = _ctrl;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+          border: Border(
+            left: Border.all(color: AppColors.divider).left,
+            right: Border.all(color: AppColors.divider).right,
+            bottom: Border.all(color: AppColors.divider).bottom,
+          ),
+        ),
+        child: SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Row(
+            children: [
+              Container(
+                width: 38, height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.store_outlined,
+                  color: ctrl.isVendor.value
+                      ? AppColors.accent
+                      : AppColors.textSecondary,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('РЕЖИМ ВЛАДЕЛЬЦА', style: AppTextStyles.labelBold),
+                  Text(
+                    ctrl.isVendor.value
+                        ? 'Управляйте своими площадками'
+                        : 'Недоступно для вашего аккаунта',
+                    style: AppTextStyles.bodySM.copyWith(fontSize: 11),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          value: ctrl.isOwnerMode.value,
+          onChanged: ctrl.isVendor.value ? ctrl.toggleOwnerMode : null,
+          activeThumbColor: AppColors.accent,
+          activeTrackColor: AppColors.accent.withValues(alpha: 0.3),
+          inactiveThumbColor: AppColors.textSecondary,
+          inactiveTrackColor: AppColors.surface,
+        ),
+      );
+    });
+  }
+
   void _showEditSheet(BuildContext context) {
-    final nameCtrl =
-        TextEditingController(text: Get.find<ProfileController>().username.value);
-    final emailCtrl =
-        TextEditingController(text: Get.find<ProfileController>().email.value);
-    final cityCtrl =
-      TextEditingController(text: Get.find<ProfileController>().city.value);
+    final ctrl = Get.find<ProfileController>();
+    final nameCtrl = TextEditingController(text: ctrl.username.value);
+    final emailCtrl = TextEditingController(text: ctrl.email.value);
+    final cityCtrl = TextEditingController(text: ctrl.city.value);
     final saving = false.obs;
     final error = ''.obs;
     final avatarData = ''.obs;
+    final selectedLevel = ctrl.gameLevel.value.obs;
+    final selectedPosition = ctrl.position.value.obs;
+
+    const levels = ['Новичок', 'Любитель', 'Профи'];
+    const positions = ['Вратарь', 'Защитник', 'Полузащитник', 'Нападающий'];
 
     showModalBottomSheet(
       context: context,
@@ -241,7 +302,7 @@ class ProfileScreen extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => Padding(
+      builder: (_) => SingleChildScrollView(
         padding: EdgeInsets.only(
           left: 24, right: 24, top: 24,
           bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -270,7 +331,62 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _inputField('ГОРОД', cityCtrl,
                 hint: 'Введите город...'),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            _chipSectionLabel('УРОВЕНЬ ИГРЫ'),
+            const SizedBox(height: 8),
+            Obx(() => Wrap(
+              spacing: 8,
+              children: levels.map((lvl) {
+                final isSelected = selectedLevel.value == lvl;
+                return ChoiceChip(
+                  label: Text(lvl),
+                  selected: isSelected,
+                  onSelected: (_) => selectedLevel.value = lvl,
+                  selectedColor: AppColors.accent,
+                  backgroundColor: AppColors.surface,
+                  labelStyle: TextStyle(
+                    color: isSelected ? AppColors.background : AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                  side: BorderSide(
+                    color: isSelected ? AppColors.accent : AppColors.divider,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                );
+              }).toList(),
+            )),
+            const SizedBox(height: 16),
+            _chipSectionLabel('ПОЗИЦИЯ (ФУТБОЛ)'),
+            const SizedBox(height: 8),
+            Obx(() => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: positions.map((pos) {
+                final isSelected = selectedPosition.value == pos;
+                return ChoiceChip(
+                  label: Text(pos),
+                  selected: isSelected,
+                  onSelected: (_) => selectedPosition.value = pos,
+                  selectedColor: AppColors.accent,
+                  backgroundColor: AppColors.surface,
+                  labelStyle: TextStyle(
+                    color: isSelected ? AppColors.background : AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                  side: BorderSide(
+                    color: isSelected ? AppColors.accent : AppColors.divider,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                );
+              }).toList(),
+            )),
+            const SizedBox(height: 16),
             GestureDetector(
               onTap: () async {
                 final picker = ImagePicker();
@@ -315,13 +431,14 @@ class ProfileScreen extends StatelessWidget {
                       : () async {
                           saving.value = true;
                           error.value = '';
-                          final err = await Get.find<ProfileController>()
-                              .saveProfile(
-                                nameCtrl.text.trim(),
-                                emailCtrl.text.trim(),
-                                cityCtrl.text.trim(),
-                                newAvatarData: avatarData.value.isNotEmpty ? avatarData.value : null,
-                              );
+                          final err = await ctrl.saveProfile(
+                            nameCtrl.text.trim(),
+                            emailCtrl.text.trim(),
+                            cityCtrl.text.trim(),
+                            newAvatarData: avatarData.value.isNotEmpty ? avatarData.value : null,
+                            newGameLevel: selectedLevel.value.isNotEmpty ? selectedLevel.value : null,
+                            newPosition: selectedPosition.value.isNotEmpty ? selectedPosition.value : null,
+                          );
                           if (err == null) {
                             Get.back();
                           } else {
@@ -357,6 +474,15 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _chipSectionLabel(String label) => Text(
+        label,
+        style: AppTextStyles.bodySM.copyWith(
+          fontSize: 11,
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w700,
+        ),
+      );
 
   Widget _inputField(String label, TextEditingController ctrl,
       {String? hint, TextInputType? keyboardType}) {

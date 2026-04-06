@@ -7,6 +7,7 @@ import '../widgets/venue_card.dart';
 import '../widgets/shimmer_loader.dart';
 import '../widgets/empty_state.dart';
 import 'notification_screen.dart';
+import 'search_screen.dart';
 import 'create_game_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -49,6 +50,20 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => Get.to(() => const SearchScreen()),
+            child: Container(
+              width: 44,
+              height: 44,
+              margin: const EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: const Icon(Icons.search, color: AppColors.textPrimary, size: 22),
             ),
           ),
           GestureDetector(

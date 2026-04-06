@@ -81,9 +81,9 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: AppColors.background,
-        body: const Center(child: CircularProgressIndicator(color: AppColors.accent)),
+        body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
       );
     }
 
@@ -378,12 +378,13 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
         GestureDetector(
           onTap: () => Get.to(() => ChatDetailScreen(
                 chat: ChatItem(
-                  id: 0,
+                  id: widget.game.id ?? 0,
                   type: 'game',
                   name: widget.game.venueName,
                   sportEmoji: widget.game.sportEmoji,
                   lastMessage: '',
                   time: '',
+                  gameId: widget.game.id,
                 ),
               )),
           child: Container(

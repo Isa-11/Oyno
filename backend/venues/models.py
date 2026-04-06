@@ -49,3 +49,17 @@ class Review(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - {self.venue.name} ({self.rating}★)'
+
+
+class TimeSlot(models.Model):
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='time_slots')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    is_booked = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['start_time']
+
+    def __str__(self):
+        status = 'забронирован' if self.is_booked else 'свободен'
+        return f'{self.venue.name} | {self.start_time:%d.%m %H:%M}–{self.end_time:%H:%M} ({status})'
