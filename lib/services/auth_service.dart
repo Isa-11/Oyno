@@ -60,6 +60,16 @@ class AuthService extends BaseClient {
         {'phone': phone, 'purpose': purpose},
       );
 
+  Future<ApiResponse<void>> verifyOtp({
+    required String phone,
+    required String code,
+    required String purpose,
+  }) =>
+      postRequest<void>(
+        'auth/verify-otp/',
+        {'phone': phone, 'code': code, 'purpose': purpose},
+      );
+
   Future<ApiResponse<AuthResult>> registerPhone({
     required String phone,
     required String code,

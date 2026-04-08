@@ -3,11 +3,16 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer
 from .models import PhoneVerification, UserProfile, UserSettings
 from .sms import send_sms
+
+
+class OtpRateThrottle(AnonRateThrottle):
+    rate = '3/hour'
 
 
 class RegisterView(APIView):
@@ -134,6 +139,8 @@ class ProfileView(APIView):
             profile.game_level = game_level
         if 'position' in request.data:
             profile.position = position
+        if 'is_vendor' in request.data:
+            profile.is_vendor = bool(request.data['is_vendor'])
         profile.save()
 
         return Response({
@@ -155,6 +162,8 @@ class SendOtpView(APIView):
     {"phone": "+996700123456", "purpose": "register"|"reset"}
     """
     permission_classes = [AllowAny]
+    throttle_classes = [OtpRateThrottle]
+
     def post(self, request):
         phone = request.data.get('phone', '').strip()
         purpose = request.data.get('purpose', '')
@@ -184,6 +193,29 @@ class SendOtpView(APIView):
         return Response({'detail': 'Код отправлен'})
 
 
+class VerifyOtpView(APIView):
+    """
+    POST /api/auth/verify-otp/
+    {"phone": "+996700123456", "code": "123456", "purpose": "register"|"reset"}
+    Проверяет код без создания пользователя. Используется на шаге 2 (Flutter).
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        phone = request.data.get('phone', '').strip()
+        code = request.data.get('code', '').strip()
+        purpose = request.data.get('purpose', '')
+
+        if not all([phone, code, purpose]):
+            return Response({'detail': 'Заполните все поля'}, status=400)
+
+        error = _verify_code(phone, code, purpose)
+        if error:
+            return Response({'detail': error}, status=400)
+
+        return Response({'detail': 'Код верный'})
+
+
 class RegisterPhoneView(APIView):
     permission_classes = [AllowAny]
     """
@@ -195,14 +227,6 @@ class RegisterPhoneView(APIView):
         code = request.data.get('code', '').strip()
         username = request.data.get('username', '').strip()
         password = request.data.get('password', '')
-
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.warning(f'[register-phone] phone={repr(phone)} code={repr(code)} username={repr(username)}')
-        print(f'[DEBUG register-phone] phone={repr(phone)} code={repr(code)} username={repr(username)}')
-        # Показать все записи OTP в базе для сравнения
-        existing = list(PhoneVerification.objects.filter(purpose='register').values('phone', 'code'))
-        print(f'[DEBUG register-phone] OTP records in DB: {existing}')
 
         if not all([phone, code, username, password]):
             return Response({'detail': 'Заполните все поля'}, status=400)
@@ -315,4 +339,29 @@ def _verify_code(phone: str, code: str, purpose: str):
     if otp.code != code:
         return 'Неверный код.'
 
+    otp.verified = True
+    otp.save(update_fields=['attempts', 'verified'])
     return None
+
+
+class UserDetailView(APIView):
+    """GET /api/auth/users/{pk}/ — публичный профиль другого пользователя"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        from django.contrib.auth.models import User
+        try:
+            user = User.objects.select_related('profile').get(pk=pk)
+        except User.DoesNotExist:
+            return Response({'detail': 'Пользователь не найден'}, status=status.HTTP_404_NOT_FOUND)
+
+        profile = getattr(user, 'profile', None)
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'city': profile.city if profile else '',
+            'rating': float(profile.rating) if profile else 0.0,
+            'game_level': profile.game_level if profile else '',
+            'position': profile.position if profile else '',
+            'avatar_data': profile.avatar_data if profile else '',
+        })

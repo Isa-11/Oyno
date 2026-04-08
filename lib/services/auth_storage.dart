@@ -10,11 +10,13 @@ class AuthStorage {
     required String access,
     required String refresh,
     required String username,
+    int userId = 0,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', access);
     await prefs.setString('refresh_token', refresh);
     await prefs.setString('username', username);
+    await prefs.setInt('user_id', userId);
   }
 
   static Future<String> readAccessToken() async {
@@ -32,10 +34,16 @@ class AuthStorage {
     return prefs.getString('username') ?? '';
   }
 
+  static Future<int> readUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_id') ?? 0;
+  }
+
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
     await prefs.remove('username');
+    await prefs.remove('user_id');
   }
 }

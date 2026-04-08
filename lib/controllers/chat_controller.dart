@@ -1,7 +1,9 @@
 import 'package:get/get.dart';
 import 'dart:async';
+import '../controllers/auth_controller.dart';
 import '../models/models.dart';
 import '../services/chat_service.dart';
+import '../services/notification_service.dart';
 
 class ChatController extends GetxController {
   final ChatService _service = Get.find<ChatService>();
@@ -14,11 +16,27 @@ class ChatController extends GetxController {
   final RxString searchQuery = ''.obs;
 
   Timer? _searchDebounce;
+  Worker? _authWorker;
 
   @override
   void onInit() {
     super.onInit();
-    fetchChats();
+    final auth = Get.find<AuthController>();
+    if (auth.token.value.isNotEmpty) {
+      fetchChats();
+    }
+    _authWorker = ever<String>(auth.token, (token) {
+      if (token.isNotEmpty) {
+        fetchChats();
+      } else {
+        chats.clear();
+        foundUsers.clear();
+        error.value = '';
+        try {
+          Get.find<NotificationService>().resetUnread();
+        } catch (_) {}
+      }
+    });
   }
 
   Future<void> fetchChats() async {
@@ -73,6 +91,7 @@ class ChatController extends GetxController {
   @override
   void onClose() {
     _searchDebounce?.cancel();
+    _authWorker?.dispose();
     super.onClose();
   }
 }

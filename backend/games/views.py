@@ -89,9 +89,10 @@ class GameJoinView(APIView):
             return Response({'detail': 'Вы уже в этой игре'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Закрыть набор если мест не осталось
+        game.refresh_from_db()
         if game.slots_needed == 0:
             game.status = 'full'
-            game.save()
+            game.save(update_fields=['status'])
 
         return Response(GameSerializer(game, context={'request': request}).data)
 

@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -40,9 +39,10 @@ Future<void> main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
-  // Firebase push-уведомления — требует google-services.json в android/app/
-  await Firebase.initializeApp();
-  await FcmService().init();
+  // Firebase push-уведомления отключены — нет google-services.json
+  final fcmService = FcmService();
+  Get.put<FcmService>(fcmService);
+  await fcmService.init();
 
   Get.put<AuthService>(AuthService());
   Get.put<AuthController>(AuthController());
@@ -61,7 +61,6 @@ Future<void> main() async {
   Get.lazyPut<SettingsController>(() => SettingsController());
   Get.lazyPut<BookingService>(() => BookingService());
   Get.lazyPut<NotificationService>(() => NotificationService());
-  Get.put<FcmService>(FcmService());
   runApp(const OynoApp());
 }
 
@@ -90,7 +89,17 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Get.find<AuthController>();
-    return Obx(() => auth.isLoggedIn.value ? const MainShell() : const LoginScreen());
+    return Obx(() {
+      if (auth.isInitializing.value) {
+        return const Scaffold(
+          backgroundColor: AppColors.background,
+          body: Center(
+            child: CircularProgressIndicator(color: AppColors.accent),
+          ),
+        );
+      }
+      return auth.isLoggedIn.value ? const MainShell() : const LoginScreen();
+    });
   }
 }
 

@@ -60,8 +60,19 @@ class _PhoneRegisterScreenState extends State<PhoneRegisterScreen> {
       _errorMsg.value = 'Введите 6-значный код';
       return;
     }
+    _isLoading.value = true;
     _errorMsg.value = '';
-    _step.value = 3;
+    final res = await _authService.verifyOtp(
+      phone: _phoneCtrl.text.trim(),
+      code: code,
+      purpose: 'register',
+    );
+    _isLoading.value = false;
+    if (res.isSuccess) {
+      _step.value = 3;
+    } else {
+      _errorMsg.value = res.error ?? 'Неверный код';
+    }
   }
 
   Future<void> _register() async {

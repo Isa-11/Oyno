@@ -140,10 +140,12 @@ class BaseClient extends GetConnect {
         if (newAccess == null || newAccess.isEmpty) return false;
 
         final username = await AuthStorage.readUsername();
+        final userId = await AuthStorage.readUserId();
         await AuthStorage.writeSession(
           access: newAccess,
           refresh: refreshToken,
           username: username,
+          userId: userId,
         );
         try {
           Get.find<AuthController>().token.value = newAccess;
@@ -158,7 +160,7 @@ class BaseClient extends GetConnect {
     try {
       Get.find<AuthController>().logout();
     } catch (_) {}
-    Get.offAllNamed('/');
+    // isLoggedIn реактивно обновится — AuthGate сам перерисуется в LoginScreen
   }
 
   void _showErrorSnackbar(int? statusCode, String message) {
