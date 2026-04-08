@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Django dev database (binary, not suitable for version control)
+backend/db.sqlite3
