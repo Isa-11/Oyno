@@ -36,6 +36,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (email.isNotEmpty &&
+        !RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,}$').hasMatch(email)) {
+      _errorMsg.value = 'Введите корректный email';
+      return;
+    }
+
     _isLoading.value = true;
     _errorMsg.value = '';
 

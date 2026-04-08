@@ -57,6 +57,7 @@ class ProfileService extends BaseClient {
     String? avatarData,
     String? gameLevel,
     String? position,
+    bool? isVendor,
   }) =>
       patchRequest<UserProfile>(
         'auth/profile/',
@@ -67,6 +68,7 @@ class ProfileService extends BaseClient {
           if (avatarData != null) 'avatar_data': avatarData,
           if (gameLevel != null) 'game_level': gameLevel,
           if (position != null) 'position': position,
+          if (isVendor != null) 'is_vendor': isVendor,
         },
         decoder: (json) => UserProfile.fromJson(json as Map<String, dynamic>),
       );

@@ -54,8 +54,25 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     }
   }
 
-  bool get _isFinished => widget.game.status == 'ЗАВЕРШЕН';
-  bool get _isConfirmed => widget.game.status == 'ПОДТВЕРЖДЕН';
+  bool get _isFinished {
+    final s = widget.game.status.toLowerCase();
+    return s == 'finished' || s == 'завершен';
+  }
+
+  bool get _isConfirmed {
+    final s = widget.game.status.toLowerCase();
+    return s == 'confirmed' || s == 'подтвержден';
+  }
+
+  String get _statusLabel {
+    switch (widget.game.status.toLowerCase()) {
+      case 'open': return 'ОТКРЫТ';
+      case 'full': return 'НАБОР ЗАКРЫТ';
+      case 'finished': return 'ЗАВЕРШЕН';
+      case 'confirmed': return 'ПОДТВЕРЖДЕН';
+      default: return widget.game.status.toUpperCase();
+    }
+  }
 
   Color get _statusColor {
     if (_isFinished) return AppColors.textSecondary;
@@ -72,6 +89,21 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
         Get.snackbar('Успешно', 'Вы присоединились к игре', snackPosition: SnackPosition.BOTTOM);
       } else {
         Get.snackbar('Ошибка', res.error ?? 'Не удалось присоединиться', snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.snackbar('Ошибка', 'Ошибка: $e', snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  Future<void> _leaveGame() async {
+    if (widget.game.id == null) return;
+    try {
+      final res = await Get.find<GameService>().leaveGame(widget.game.id!);
+      if (res.isSuccess) {
+        setState(() => _joined = false);
+        Get.snackbar('Готово', 'Вы покинули игру', snackPosition: SnackPosition.BOTTOM);
+      } else {
+        Get.snackbar('Ошибка', res.error ?? 'Не удалось покинуть игру', snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
       Get.snackbar('Ошибка', 'Ошибка: $e', snackPosition: SnackPosition.BOTTOM);
@@ -158,7 +190,7 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
               border: Border.all(color: _statusColor.withValues(alpha: 0.5)),
             ),
             child: Text(
-              widget.game.status,
+              _statusLabel,
               style: AppTextStyles.bodySM.copyWith(
                 color: _statusColor,
                 fontWeight: FontWeight.w700,
@@ -350,24 +382,24 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
       children: [
         Expanded(
           child: GestureDetector(
-            onTap: _joined
-                ? null
-                : _joinGame,
+            onTap: _joined ? _leaveGame : _joinGame,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: _joined ? AppColors.confirmGreen.withValues(alpha: 0.15) : AppColors.accent,
+                color: _joined
+                    ? AppColors.dangerRed.withValues(alpha: 0.12)
+                    : AppColors.accent,
                 borderRadius: BorderRadius.circular(14),
                 border: _joined
-                    ? Border.all(color: AppColors.confirmGreen, width: 1.5)
+                    ? Border.all(color: AppColors.dangerRed, width: 1.5)
                     : null,
               ),
               child: Center(
                 child: Text(
-                  _joined ? '✓ ВЫ УЧАСТВУЕТЕ' : '⚡ ПРИСОЕДИНИТЬСЯ',
+                  _joined ? '✗ ПОКИНУТЬ ИГРУ' : '⚡ ПРИСОЕДИНИТЬСЯ',
                   style: AppTextStyles.headingMD.copyWith(
-                    color: _joined ? AppColors.confirmGreen : AppColors.background,
+                    color: _joined ? AppColors.dangerRed : AppColors.background,
                   ),
                 ),
               ),

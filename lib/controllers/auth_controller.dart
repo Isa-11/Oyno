@@ -6,8 +6,10 @@ class AuthController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
 
   final RxBool isLoggedIn = false.obs;
+  final RxBool isInitializing = true.obs;
   final RxString username = ''.obs;
   final RxString token = ''.obs;
+  final RxInt userId = 0.obs;
 
   int _sessionRevision = 0;
 
@@ -21,15 +23,21 @@ class AuthController extends GetxController {
     final rev = _sessionRevision;
     final savedToken = await AuthStorage.readAccessToken();
     final savedUsername = await AuthStorage.readUsername();
+    final savedUserId = await AuthStorage.readUserId();
 
     // Ignore stale load result if auth state changed while reading storage.
-    if (rev != _sessionRevision) return;
+    if (rev != _sessionRevision) {
+      isInitializing.value = false;
+      return;
+    }
 
     if (savedToken.isNotEmpty) {
       token.value = savedToken;
       username.value = savedUsername;
+      userId.value = savedUserId;
       isLoggedIn.value = true;
     }
+    isInitializing.value = false;
   }
 
   Future<String?> login(String usernameInput, String password) async {
@@ -64,11 +72,13 @@ class AuthController extends GetxController {
     _sessionRevision++;
     token.value = result.access;
     username.value = result.user.username;
+    userId.value = result.user.id;
     isLoggedIn.value = true;
     await AuthStorage.writeSession(
       access: result.access,
       refresh: result.refresh,
       username: result.user.username,
+      userId: result.user.id,
     );
   }
 
@@ -82,6 +92,7 @@ class AuthController extends GetxController {
     _sessionRevision++;
     token.value = '';
     username.value = '';
+    userId.value = 0;
     isLoggedIn.value = false;
     await AuthStorage.clearSession();
   }

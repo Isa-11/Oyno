@@ -51,7 +51,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
     _errorMsg.value = '';
-    _step.value = 3;
+    _isLoading.value = true;
+    _authService.verifyOtp(
+      phone: _phoneCtrl.text.trim(),
+      code: _codeCtrl.text.trim(),
+      purpose: 'reset',
+    ).then((res) {
+      _isLoading.value = false;
+      if (res.isSuccess) {
+        _step.value = 3;
+      } else {
+        _errorMsg.value = res.error ?? 'Неверный код';
+      }
+    });
   }
 
   Future<void> _resetPassword() async {
